@@ -406,7 +406,16 @@ class DoctrineBuilder implements QueryInterface
         {
             $query->setMaxResults($iDisplayLength)->setFirstResult($request->get('iDisplayStart'));
         }
-        $objects         = $query->getResult(Query::HYDRATE_OBJECT);
+
+        // we can conserve memory by iterating, also see below
+        if (true === $this->getConserveMemory())
+        {
+            $iterable_result = $query->iterate($query->getParameters(), Query::HYDRATE_OBJECT);
+        }
+        else
+        {
+            $objects = $query->getResult(Query::HYDRATE_OBJECT);
+        }
         $data            = array();
         $entity_alias    = $this->entity_alias;
         $joins           = $this->joins;
@@ -497,16 +506,57 @@ class DoctrineBuilder implements QueryInterface
             $property->setAccessible(true);
             return $property->getValue($object);
         };
-        foreach ($objects as $object)
+
+        // we can conserve memory by both detaching the entities and not returning them
+        if (true === $this->getConserveMemory())
         {
-            $item = array();
-            foreach ($this->fields as $_field)
+            $objects = []; // leave empty on purpose
+            while ((list($obj) = $iterable_result->next()) !== false)
             {
-                $item[] = $__getValue($__getKey($_field), $object, $has_add_select, $_field);
+                $item = array();
+                foreach ($this->fields as $_field)
+                {
+                    $item[] = $__getValue($__getKey($_field), $obj, $has_add_select, $_field);
+                }
+                $data[] = $item;
+
+                $this->em->detach($has_add_select ? $obj[0] : $obj);
             }
-            $data[] = $item;
         }
+        else
+        {
+            foreach ($objects as $object)
+            {
+                $item = array();
+                foreach ($this->fields as $_field)
+                {
+                    $item[] = $__getValue($__getKey($_field), $object, $has_add_select, $_field);
+                }
+                $data[] = $item;
+            }
+        }
+
         return array($data, $objects);
+    }
+
+    /**
+     * Experimental feature to conserve memory usage. Will use an iterator and
+     * detach the entities from the EntityManager. Also does not give the
+     * entities back to the renderer. Might lead to problems for some datatables.
+     *
+     * @param boolean $conserve_memory
+     */
+    public function setConserveMemory($conserve_memory)
+    {
+        $this->conserve_memory = $conserve_memory;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getConserveMemory()
+    {
+        return $this->conserve_memory;
     }
 
     /**
