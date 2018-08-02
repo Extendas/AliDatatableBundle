@@ -105,8 +105,8 @@ class DoctrineBuilder implements QueryInterface
                     {
                         $parts = explode(" - ", $search_param);
 
-                        $start = new \DateTime($parts[0]);
-                        $end = new \DateTime($parts[1]);
+                        $start = date_create($parts[0]);
+                        $end = date_create($parts[1]);
 
                         if (false === $filter_fields[$i]->isFilterTime())
                         {
@@ -117,6 +117,13 @@ class DoctrineBuilder implements QueryInterface
                         {
                             // make sure to get the full last minute
                             $end->setTime($end->format('H'), $end->format('i'), 59);
+                        }
+
+                        // when date is invalid, default to the date of now.
+                        // This will most likely fail to get you any results, which is precisely the points.
+                        if (false === $start || false === $end)
+                        {
+                            $start = $end = new \DateTime;
                         }
 
                         if ($original_field !== null && is_array($original_field) && current($original_field) instanceof DQLDatatableField)
