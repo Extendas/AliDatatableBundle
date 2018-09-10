@@ -358,6 +358,66 @@ class DoctrineBuilder implements QueryInterface
     }
 
     /**
+     * @param array $filter_fields
+     * @return string
+     * @throws \Exception
+     */
+    public function getQuery(array $filter_fields=[])
+    {
+        $request    = $this->request;
+        $dql_fields = array_values($this->fields);
+
+        // add sorting
+        if ($request->get('iSortCol_0') !== null)
+        {
+
+            $order_field = current(explode(' as ', $dql_fields[$request->get('iSortCol_0')]));
+        }
+        else
+        {
+            $order_field = null;
+        }
+        $qb = clone $this->queryBuilder;
+
+        if ($order_field !== null)
+        {
+            $field = $dql_fields[$request->get('iSortCol_0')];
+            if ($field instanceof DQLDatatableField)
+            {
+                $qb->orderBy($field->getAlias(), $request->get('sSortDir_0', 'asc'));
+            }
+            else
+            {
+                $qb->orderBy($order_field, $request->get('sSortDir_0', 'asc'));
+            }
+        }
+        else
+        {
+            $qb->resetDQLPart('orderBy');
+        }
+
+        // add search
+        $this->_addSearch($qb, $filter_fields);
+
+        // get results and process data formatting
+        $query          = $qb->getQuery();
+        $iDisplayLength = (int) $request->get('iDisplayLength');
+        if ($iDisplayLength > 0)
+        {
+            $query->setMaxResults($iDisplayLength)->setFirstResult($request->get('iDisplayStart'));
+        }
+        $sql = $query->getSQL();
+        $params = $this->getSQLParamsFromQuery($query);
+
+
+        $pos = 0;
+        while (($pos = strpos($sql, '?', $pos)) !== false) {
+            $sql = sprintf("%s'%s'%s", substr($sql, 0, $pos), array_shift($params), substr($sql,$pos+1));
+        }
+        return $sql;
+    }
+
+    /**
      * get data
      *
      * @return array

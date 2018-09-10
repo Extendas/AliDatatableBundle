@@ -15,6 +15,13 @@ interface QueryInterface
     function getTotalRecords(array $filter_fields=[]);
 
     /**
+     * get sql query
+     *
+     * @return string
+     */
+    function getQuery(array $filter_fields=[]);
+
+    /**
      * get data
      * 
      * @return array
