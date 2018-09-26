@@ -15,6 +15,13 @@ interface QueryInterface
     function getTotalRecords(array $filter_fields=[]);
 
     /**
+     * Add the sorting and ordering to the query
+     *
+     * @return mixed
+     */
+    function addSorting();
+
+    /**
      * get sql query
      *
      * @return string

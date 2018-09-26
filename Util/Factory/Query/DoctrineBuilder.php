@@ -358,11 +358,10 @@ class DoctrineBuilder implements QueryInterface
     }
 
     /**
-     * @param array $filter_fields
-     * @return string
-     * @throws \Exception
+     * Add the sorting and ordering to the query
+     * @return \Doctrine\ORM\QueryBuilder
      */
-    public function getQuery(array $filter_fields=[])
+    public function addSorting()
     {
         $request    = $this->request;
         $dql_fields = array_values($this->fields);
@@ -395,11 +394,24 @@ class DoctrineBuilder implements QueryInterface
         {
             $qb->resetDQLPart('orderBy');
         }
+        return $qb;
+    }
+
+    /**
+     * @param array $filter_fields
+     * @return string
+     * @throws \Exception
+     */
+    public function getQuery(array $filter_fields=[])
+    {
+        $request    = $this->request;
+
+        $qb = $this->addSorting();
 
         // add search
         $this->_addSearch($qb, $filter_fields);
 
-        // get results and process data formatting
+        // get query
         $query          = $qb->getQuery();
         $iDisplayLength = (int) $request->get('iDisplayLength');
         if ($iDisplayLength > 0)
@@ -425,35 +437,8 @@ class DoctrineBuilder implements QueryInterface
     public function getData(array $filter_fields=[])
     {
         $request    = $this->request;
-        $dql_fields = array_values($this->fields);
 
-        // add sorting
-        if ($request->get('iSortCol_0') !== null)
-        {
-
-            $order_field = current(explode(' as ', $dql_fields[$request->get('iSortCol_0')]));
-        }
-        else
-        {
-            $order_field = null;
-        }
-        $qb = clone $this->queryBuilder;
-        if ($order_field !== null)
-        {
-            $field = $dql_fields[$request->get('iSortCol_0')];
-            if ($field instanceof DQLDatatableField)
-            {
-                $qb->orderBy($field->getAlias(), $request->get('sSortDir_0', 'asc'));
-            }
-            else
-            {
-                $qb->orderBy($order_field, $request->get('sSortDir_0', 'asc'));
-            }
-        }
-        else
-        {
-            $qb->resetDQLPart('orderBy');
-        }
+        $qb = $this->addSorting();
 
         // extract alias selectors
         $select = array($this->entity_alias);
