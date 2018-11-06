@@ -15,6 +15,20 @@ interface QueryInterface
     function getTotalRecords(array $filter_fields=[]);
 
     /**
+     * Add the sorting and ordering to the query
+     *
+     * @return mixed
+     */
+    function addSorting();
+
+    /**
+     * get sql query
+     *
+     * @return string
+     */
+    function getQuery(array $filter_fields=[]);
+
+    /**
      * get data
      * 
      * @return array
@@ -53,6 +67,20 @@ interface QueryInterface
      * @return string
      */
     function getEntityAlias();
+
+    /**
+     * Get query parameters
+     *
+     * @return array
+     */
+    function getParameters();
+
+    /**
+     * Get joins
+     *
+     * @return array
+     */
+    function getJoins();
 
     /**
      * get fields
