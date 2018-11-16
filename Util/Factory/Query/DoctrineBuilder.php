@@ -358,11 +358,10 @@ class DoctrineBuilder implements QueryInterface
     }
 
     /**
-     * get data
-     *
-     * @return array
+     * Add the sorting and ordering to the query
+     * @return \Doctrine\ORM\QueryBuilder
      */
-    public function getData(array $filter_fields=[])
+    public function addSorting()
     {
         $request    = $this->request;
         $dql_fields = array_values($this->fields);
@@ -378,6 +377,7 @@ class DoctrineBuilder implements QueryInterface
             $order_field = null;
         }
         $qb = clone $this->queryBuilder;
+
         if ($order_field !== null)
         {
             $field = $dql_fields[$request->get('iSortCol_0')];
@@ -394,6 +394,68 @@ class DoctrineBuilder implements QueryInterface
         {
             $qb->resetDQLPart('orderBy');
         }
+        return $qb;
+    }
+
+    /**
+     * @param array $filter_fields
+     * @return string
+     * @throws \Exception
+     */
+    public function getQuery(array $filter_fields=[])
+    {
+
+        $qb = $this->addSorting();
+
+        // extract alias selectors
+        $select = array($this->entity_alias);
+        foreach ($this->joins as $join)
+        {
+            if (strpos($join[0], "."))
+            {
+                $select[] = $join[1];
+            }
+        }
+        $qb->select(implode(',', $select));
+        // add specific selects
+        $has_add_select = false;
+        foreach ($this->fields as $field)
+        {
+            if ($field instanceof DQLDatatableField)
+            {
+                $has_add_select = true;
+                $qb->addSelect(sprintf("%s as %s", $field->getField(), $field->getAlias()));
+            }
+        }
+
+        // add search
+        $this->_addSearch($qb, $filter_fields);
+        $params = $qb->getParameters();
+
+        // get results and process data formatting
+        $query          = $qb->getQuery();
+
+        return array($query->getDQL(), $params);
+    }
+
+    /**
+     * @return \Doctrine\Common\Collections\ArrayCollection
+     */
+    public function getParameters()
+    {
+        return $this->queryBuilder->getParameters();
+    }
+
+    /**
+     * get data
+     *
+     * @return array
+     */
+    public function getData(array $filter_fields=[])
+    {
+        $request    = $this->request;
+
+        $qb = $this->addSorting();
 
         // extract alias selectors
         $select = array($this->entity_alias);
@@ -548,6 +610,14 @@ class DoctrineBuilder implements QueryInterface
     public function getEntityAlias()
     {
         return $this->entity_alias;
+    }
+
+    /**
+     * @return array
+     */
+    public function getJoins()
+    {
+        return $this->joins;
     }
 
     /**
