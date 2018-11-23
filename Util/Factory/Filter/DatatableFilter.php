@@ -111,7 +111,7 @@ class DatatableFilter
                 new DatatableFilterValue(0, $no_label)
             ),
             self::SEARCH_TYPE_EQUALS,
-            ($default_value ? (int)$default_value : null)
+            ($default_value !== null ? (int)$default_value : null)
         );
     }
 
