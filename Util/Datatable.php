@@ -158,10 +158,10 @@ class Datatable
         {
             $this->applyTo($data, $objects);
         }
-//        if (!is_null($this->_renderer_obj))
-//        {
-//            $this->_renderer_obj->applyTo($data, $objects);
-//        }
+        if (!is_null($this->_renderer_obj))
+        {
+            $this->_renderer_obj->applyTo($data, $objects);
+        }
         if (!empty($this->_multiple))
         {
             array_walk($data, function($val, $key) use(&$data, $ids) {

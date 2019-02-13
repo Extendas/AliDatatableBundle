@@ -53,7 +53,7 @@ class DatatableField
     /**
      * @return bool
      */
-    public function isSearch(): bool
+    public function isSearch()
     {
         return $this->search;
     }
