@@ -620,6 +620,12 @@ class DoctrineBuilder implements QueryInterface
         return $this->joins;
     }
 
+    public function setJoins($joins)
+    {
+        $this->joins = $joins;
+        return $this;
+    }
+
     /**
      * get fields
      *
@@ -732,6 +738,11 @@ class DoctrineBuilder implements QueryInterface
         $this->queryBuilder->where($where);
         $this->queryBuilder->setParameters($params);
         return $this;
+    }
+
+    public function getWhere()
+    {
+        return $this->queryBuilder->getDQLPart('where');
     }
 
     /**

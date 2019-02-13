@@ -117,6 +117,16 @@ class Datatable
         return $this;
     }
 
+    public function setJoins($joins)
+    {
+        foreach ($joins as $join)
+        {
+            $join[3] = str_replace('with', '', $join[3]);
+            $this->_queryBuilder->addJoin($join[0], $join[1], $join[2], $join[3]);
+        }
+        return $this;
+    }
+
     /**
      * execute
      * 
@@ -144,10 +154,14 @@ class Datatable
         {
             array_walk($data, $this->_renderer);
         }
-        if (!is_null($this->_renderer_obj))
+        if(!is_null($this->getFields()))
         {
-            $this->_renderer_obj->applyTo($data, $objects);
+            $this->applyTo($data, $objects);
         }
+//        if (!is_null($this->_renderer_obj))
+//        {
+//            $this->_renderer_obj->applyTo($data, $objects);
+//        }
         if (!empty($this->_multiple))
         {
             array_walk($data, function($val, $key) use(&$data, $ids) {
@@ -191,6 +205,81 @@ class Datatable
         }
 
         return $instance;
+    }
+
+    /**
+     * return the rendered view using the given content
+     *
+     * @param string    $view_path
+     * @param array     $params
+     *
+     * @return string
+     */
+    public function applyView($view_path, array $params)
+    {
+        $out = $this->_container
+            ->get('templating')
+            ->render($view_path, $params);
+        return html_entity_decode($out);
+    }
+
+    /**
+     * prepare the renderer :
+     *  - guess the identifier index
+     *
+     * @return void
+     */
+    protected function _prepare()
+    {
+        $this->_identifier_index = array_search("_identifier_", array_keys($this->_fields));
+    }
+
+    /**
+     * apply foreach given cell content the given (if exists) view
+     *
+     * @param array $data
+     * @param array $objects
+     *
+     * @return void
+     */
+    public function applyTo(array &$data, array $objects)
+    {
+        $keys = array_keys($this->getFields());
+        $fields = $this->getFields();
+        foreach ($data as $row_index => $row)
+        {
+//            $identifier_raw = $data[$row_index][$this->_identifier_index];
+            $field_index = 0;
+            foreach ($row as $column_index => $column)
+            {
+                $params = array();
+                /** @var DatatableField $field */
+                $field = $fields[$keys[$field_index]];
+                if(!$field instanceof DatatableField)
+                {
+                    continue;
+                }
+                if ($field->getRenderer() !== null)
+                {
+                    $view   = $field->getRenderer();
+                    $params = ['data' => $column];
+                }
+                else
+                {
+                    $view = 'AliDatatableBundle:Renderers:_default.html.twig';
+                }
+                $params                          = array_merge($params, array(
+                        'dt_obj'  => $objects[$row_index],
+                        'dt_item' => $data[$row_index][$column_index],
+                        'dt_id'   => $column_index
+                    )
+                );
+                $data[$row_index][$column_index] = $this->applyView(
+                    $view, $params
+                );
+                $field_index++;
+            }
+        }
     }
 
     /**
@@ -314,6 +403,11 @@ class Datatable
         return $this;
     }
 
+    public function getEntity()
+    {
+        return $this->_queryBuilder->getEntityName();
+    }
+
     /**
      * set entity manager
      * 
@@ -336,6 +430,15 @@ class Datatable
      */
     public function setFields(array $fields)
     {
+        $search_fields = [];
+        foreach (array_values($fields) as $index => $field)
+        {
+            if($field instanceof DatatableField && $field->isSearch() === true)
+            {
+                $search_fields[] = $index;
+            }
+        }
+        $this->_search_fields =$search_fields;
         $this->_queryBuilder->setFields($fields);
         return $this;
     }
@@ -503,6 +606,11 @@ class Datatable
         return $this;
     }
 
+    public function getRenderer()
+    {
+        return $this->_renderer;
+    }
+
     /**
      * set query where
      * 
@@ -516,6 +624,7 @@ class Datatable
         $this->_queryBuilder->setWhere($where, $params);
         return $this;
     }
+
 
     /**
      * set query group

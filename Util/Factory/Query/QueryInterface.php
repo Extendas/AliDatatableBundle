@@ -132,6 +132,8 @@ interface QueryInterface
      */
     function setWhere($where, array $params = array());
 
+    function getWhere();
+
     /**
      * set search
      *
@@ -159,4 +161,11 @@ interface QueryInterface
      * @return Datatable 
      */
     function addJoin($join_field, $alias, $type = Join::INNER_JOIN, $cond = '');
+
+    /**
+     * @param $joins
+     *
+     * @return mixed
+     */
+    function setJoins($joins);
 }
