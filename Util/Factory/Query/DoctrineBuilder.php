@@ -63,6 +63,9 @@ class DoctrineBuilder implements QueryInterface
     /** @var boolean */
     protected $search = FALSE;
 
+    /** @var array */
+    protected $query_hints;
+
     /**
      * class constructor
      *
@@ -74,6 +77,7 @@ class DoctrineBuilder implements QueryInterface
         $this->em           = $em;
         $this->request      = Request::createFromGlobals();
         $this->queryBuilder = $this->em->createQueryBuilder();
+        $this->query_hints  = [];
     }
 
     /**
@@ -484,6 +488,8 @@ class DoctrineBuilder implements QueryInterface
 
         // get results and process data formatting
         $query          = $qb->getQuery();
+
+        $this->addQueryHintsToQuery($query);
         $iDisplayLength = (int) $request->get('iDisplayLength');
         if ($iDisplayLength > 0)
         {
@@ -771,6 +777,36 @@ class DoctrineBuilder implements QueryInterface
     {
         $this->queryBuilder = $queryBuilder;
         return $this;
+    }
+
+    /**
+     * @param string $hint
+     * @param bool $value
+     */
+    public function AddQueryHint($hint, $value)
+    {
+        $this->query_hints[$hint] = $value;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getQueryHints()
+    {
+        return $this->query_hints;
+    }
+
+    private function addQueryHintsToQuery(Query $query)
+    {
+        if (\count($this->query_hints) === 0)
+        {
+            return;
+        }
+
+        foreach($this->query_hints as $query_hint => $value)
+        {
+            $query->setHint($query_hint, $value);
+        }
     }
 
 }
