@@ -789,13 +789,16 @@ class DoctrineBuilder implements QueryInterface
     }
 
     /**
-     * @return mixed
+     * @return array
      */
     public function getQueryHints()
     {
         return $this->query_hints;
     }
 
+    /**
+     * @param Query $query
+     */
     private function addQueryHintsToQuery(Query $query)
     {
         if (\count($this->query_hints) === 0)
