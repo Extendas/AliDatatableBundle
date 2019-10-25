@@ -782,10 +782,13 @@ class DoctrineBuilder implements QueryInterface
     /**
      * @param string $hint
      * @param bool $value
+     *
+     * @return DoctrineBuilder
      */
     public function AddQueryHint($hint, $value)
     {
         $this->query_hints[$hint] = $value;
+        return $this;
     }
 
     /**

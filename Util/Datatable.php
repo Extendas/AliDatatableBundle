@@ -663,4 +663,10 @@ class Datatable
         return $this;
     }
 
+    public function AddQueryHint($hint, $value)
+    {
+        $this->_queryBuilder->addQueryHint($hint, $value);
+        return $this;
+    }
+
 }
