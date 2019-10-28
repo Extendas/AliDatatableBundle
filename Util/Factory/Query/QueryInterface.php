@@ -159,4 +159,12 @@ interface QueryInterface
      * @return Datatable 
      */
     function addJoin($join_field, $alias, $type = Join::INNER_JOIN, $cond = '');
+
+    /**
+     * @param $hint
+     * @param $value
+     *
+     * @return DoctrineBuilder
+     */
+    function AddQueryHint($hint, $value);
 }
