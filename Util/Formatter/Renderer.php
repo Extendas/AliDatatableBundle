@@ -87,7 +87,7 @@ class Renderer
                     $view = 'AliDatatableBundle:Renderers:_default.html.twig';
                 }
                 $params                          = array_merge($params, array(
-                    'dt_obj'  => $objects[$row_index],
+                        'dt_obj'  => isset($objects[$row_index]) ? $objects[$row_index] : null,
                     'dt_item' => $data[$row_index][$column_index],
                     'dt_id'   => $identifier_raw
                         )
