@@ -102,6 +102,18 @@ class DoctrineBuilder implements QueryInterface
                 $is_filter_field_with_equals = isset($filter_fields[$i]) && $filter_fields[$i]->getSearchType() == DatatableFilter::SEARCH_TYPE_EQUALS;
                 $equals_operator = $is_filter_field_with_equals ? '=' : 'like';
 
+                if (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DateTimeFilter && $filter_fields[$i]->isRequired())
+                {
+                    $parts = explode(" - ", $search_param);
+                    if (\count($parts) < 2)
+                    {
+                        $search_param = sprintf('%s - %s',
+                            $filter_fields[$i]->getDefaultStart()->format('Y-m-d H:i:s'),
+                            $filter_fields[$i]->getDefaultEnd()->format('Y-m-d H:i:s')
+                        );
+                    }
+                }
+
                 if ($search_param !== false && $search_param != '')
                 {
                     $field        = explode(' ', trim($search_field));
