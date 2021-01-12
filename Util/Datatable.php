@@ -73,9 +73,10 @@ class Datatable
         $this->_config      = $this->_container->getParameter('ali_datatable');
         $this->_em          = $this->_container->get('doctrine.orm.entity_manager');
         $this->_request      = $this->_container->get('request');
-        $this->_queryBuilder = new DoctrineBuilder($container);
         self::$_current_instance = $this;
         $this->_applyDefaults();
+
+        $this->_queryBuilder = new DoctrineBuilder($container, $this->_config);
     }
 
     /**
@@ -580,6 +581,11 @@ class Datatable
         return $this;
     }
 
-
-    
+    /**
+     * @param bool $experimental_querying
+     */
+    public function setExperimentalQuerying($experimental_querying)
+    {
+        $this->_config['all']['experimental_querying'] = (bool)$experimental_querying;
+    }
 }

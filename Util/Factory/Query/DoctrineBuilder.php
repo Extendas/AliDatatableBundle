@@ -2,6 +2,8 @@
 
 namespace Ali\DatatableBundle\Util\Factory\Query;
 
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Doctrine\ORM\Query,
     Doctrine\ORM\Query\Expr\Join;
@@ -54,17 +56,22 @@ class DoctrineBuilder implements QueryInterface
     /** @var boolean */
     protected $search = FALSE;
 
+    /** @var array */
+    private $datatable_config;
+
     /**
-     * class constructor 
-     * 
-     * @param ContainerInterface $container 
+     * class constructor
+     *
+     * @param ContainerInterface $container
+     * @param array $datatable_config
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, $datatable_config = [])
     {
-        $this->container    = $container;
-        $this->em           = $this->container->get('doctrine.orm.entity_manager');
-        $this->request      = $this->container->get('request');
-        $this->queryBuilder = $this->em->createQueryBuilder();
+        $this->container            = $container;
+        $this->em                   = $this->container->get('doctrine.orm.entity_manager');
+        $this->request              = $this->container->get('request');
+        $this->queryBuilder         = $this->em->createQueryBuilder();
+        $this->datatable_config     = $datatable_config;
     }
 
     /**
@@ -151,6 +158,12 @@ class DoctrineBuilder implements QueryInterface
      */
     public function getData($hydration_mode)
     {
+        if (isset($this->datatable_config['all']['experimental_querying']) &&
+            ($experimental_querying = $this->datatable_config['all']['experimental_querying']) === true)
+        {
+            return $this->getDataWithExperimentalQuerying($hydration_mode);
+        }
+
         $request    = $this->request;
         $dql_fields = array_values($this->fields);
         if ($request->get('iSortCol_0') != null)
@@ -217,6 +230,24 @@ class DoctrineBuilder implements QueryInterface
             }
         }
         return $data;
+    }
+
+    private function getDataWithExperimentalQuerying($hydration_mode)
+    {
+
+    }
+
+    private function setOrderFromCurrentRequest(QueryBuilder $query_builder)
+    {
+        if ($this->request->query->get('iSortCol_0') != null)
+        {
+            $order_field = current(explode(' as ', $this->request->query->get('iSortCol_0')));
+            $query_builder->orderBy($order_field, $this->request->query->get('sSortDir_0', Criteria::ASC));
+        }
+        else
+        {
+            $query_builder->resetDQLPart('orderBy');
+        }
     }
 
     /**
@@ -391,5 +422,4 @@ class DoctrineBuilder implements QueryInterface
         $this->queryBuilder = $queryBuilder;
         return $this;
     }
-
 }
