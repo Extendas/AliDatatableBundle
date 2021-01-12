@@ -66,6 +66,9 @@ class DoctrineBuilder implements QueryInterface
     /** @var array */
     protected $query_hints;
 
+    /** @var string|null */
+    private $_lowest_entity_field_id;
+
     /**
      * class constructor
      *
@@ -486,15 +489,29 @@ class DoctrineBuilder implements QueryInterface
         // add search
         $this->_addSearch($qb, $filter_fields);
 
+        $total_count = null;
+        if ($this->_lowest_entity_field_id !== null)
+        {
+            $id_qb = clone $qb;
+            $id_qb->select(sprintf('%s AS id', $this->_lowest_entity_field_id));
+
+            $id_query = $id_qb->getQuery();
+
+            $iDisplayLength = (int) $request->get('iDisplayLength');
+            $ids = $id_query->getArrayResult();
+            $ids = array_column($ids, 'id');
+            $total_count = \count($ids);
+            $ids = array_unique($ids);
+            $ids = array_slice($ids, $request->get('iDisplayStart'), $iDisplayLength);
+
+            $qb->andWhere(sprintf('%s IN (:_ids_)', $this->_lowest_entity_field_id));
+            $qb->setParameter('_ids_', array_values($ids));
+        }
+
         // get results and process data formatting
         $query          = $qb->getQuery();
 
         $this->addQueryHintsToQuery($query);
-        $iDisplayLength = (int) $request->get('iDisplayLength');
-        if ($iDisplayLength > 0)
-        {
-            $query->setMaxResults($iDisplayLength)->setFirstResult($request->get('iDisplayStart'));
-        }
         $objects         = $query->getResult(Query::HYDRATE_OBJECT);
         $data            = array();
         $entity_alias    = $this->entity_alias;
@@ -595,7 +612,7 @@ class DoctrineBuilder implements QueryInterface
             }
             $data[] = $item;
         }
-        return array($data, $objects);
+        return array($data, $objects, $total_count);
     }
 
     /**
@@ -815,4 +832,8 @@ class DoctrineBuilder implements QueryInterface
         }
     }
 
+    public function setExperimentalQuerying($lowest_entity_field_id)
+    {
+        $this->_lowest_entity_field_id = $lowest_entity_field_id;
+    }
 }

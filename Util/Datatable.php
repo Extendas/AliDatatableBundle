@@ -125,8 +125,11 @@ class Datatable
     public function execute()
     {
         $request       = $this->_request;
-        $iTotalRecords = $this->_queryBuilder->getTotalRecords($this->getFilterFields());
-        list($data, $objects) = $this->_queryBuilder->getData($this->getFilterFields());
+        list($data, $objects, $total_count) = $this->_queryBuilder->getData($this->getFilterFields());
+        if ($total_count === null)
+        {
+            $total_count = $this->_queryBuilder->getTotalRecords($this->getFilterFields());
+        }
         $id_index      = array_search('_identifier_', array_keys($this->getFields()));
         $ids           = array();
         array_walk($data, function($val, $key) use ($id_index, &$ids) {
@@ -157,8 +160,8 @@ class Datatable
         }
         $output = array(
             "sEcho"                => intval($request->get('sEcho')),
-            "iTotalRecords"        => $iTotalRecords,
-            "iTotalDisplayRecords" => $iTotalRecords,
+            "iTotalRecords"        => $total_count,
+            "iTotalDisplayRecords" => $total_count,
             "aaData"               => $data
         );
         return new JsonResponse($output);
@@ -669,4 +672,8 @@ class Datatable
         return $this;
     }
 
+    public function setExperimentQuerying($lowest_entity_field_id)
+    {
+        $this->_queryBuilder->setExperimentalQuerying($lowest_entity_field_id);
+    }
 }
