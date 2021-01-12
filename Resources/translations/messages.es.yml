@@ -1,21 +1,22 @@
 ali:
     common:
-        action: Acciones
-        confirm_delete: "¿Está seguro(a) que desea eliminar esta entrada?"
-        delete: Eliminar
-        edit: Editar
+        all: ''
+        action: "Acciones"
+        confirm_delete: "¿Está seguro de que desea eliminar este elemento?"
+        delete: "borrar"
+        edit: "editar"
         no_action: "-"
-        sFirst: Primera
-        sInfo: "Mostrando de _START_ a _END_ de _TOTAL_ entradas"
-        sInfoEmpty: "Mostrando 0 de 0 entradas"
-        sInfoFiltered: "(filtradas de un total de _MAX_ entradas)"
+        sProcessing: "Cargando..."
+        sLengthMenu: "Mostrar _MENU_ registros"
+        sZeroRecords: "No se encontraron resultados"
+        sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros"
+        sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros"
+        sInfoFiltered: "(filtrado de un total de _MAX_ registros)"
         sInfoPostFix: ""
-        sLast: Última
-        sLengthMenu: "Mostrar _MENU_ entradas"
-        sLoadingRecords: ""
-        sNext: Siguiente
-        sPrevious: Anterior
-        sProcessing: Cargando...
         sSearch: "Buscar:"
-        sZeroRecords: "No se encontró ninguna entrada"
-        search: "Búsqueda"
+        sLoadingRecords: ""
+        sFirst: "Primero"
+        sPrevious: "Anterior"  
+        sNext: "Siguiente"
+        sLast: "Último"
+        search: "Filtrar"

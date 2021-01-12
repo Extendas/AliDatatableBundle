@@ -1,5 +1,6 @@
 ali:
     common:
+        all: ''
         action: Aktionen
         confirm_delete: "Möchten Sie diesen Eintrag wirklich löschen?"
         delete: löschen
@@ -19,3 +20,4 @@ ali:
         sNext: "Folgende"
         sLast: "Letzte"
         search: "suchen"
+        

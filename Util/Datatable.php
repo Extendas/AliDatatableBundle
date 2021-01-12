@@ -2,14 +2,17 @@
 
 namespace Ali\DatatableBundle\Util;
 
-use Symfony\Component\DependencyInjection\ContainerInterface,
-    Symfony\Component\HttpFoundation\Response;
-use Doctrine\ORM\Query,
-    Doctrine\ORM\Query\Expr\Join;
-use Ali\DatatableBundle\Util\Factory\Query\QueryInterface,
-    Ali\DatatableBundle\Util\Factory\Query\DoctrineBuilder,
-    Ali\DatatableBundle\Util\Formatter\Renderer,
-    Ali\DatatableBundle\Util\Factory\Prototype\PrototypeBuilder;
+use Ali\DatatableBundle\Util\Factory\Fields\DatatableField;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\Query\Expr\Join;
+use Doctrine\ORM\EntityManager;
+use Ali\DatatableBundle\Util\Factory\Query\QueryInterface;
+use Ali\DatatableBundle\Util\Factory\Query\DoctrineBuilder;
+use Ali\DatatableBundle\Util\Formatter\Renderer;
+use Ali\DatatableBundle\Util\Factory\Prototype\PrototypeBuilder;
 
 class Datatable
 {
@@ -22,9 +25,6 @@ class Datatable
 
     /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
     protected $_container;
-
-    /** @var \Doctrine\ORM\EntityManager */
-    protected $_em;
 
     /** @var boolean */
     protected $_has_action;
@@ -55,12 +55,16 @@ class Datatable
 
     /** @var array */
     protected $_search_fields = array();
-    
+
+    /** @var array */
+    protected $_filter_fields = array();
+
     /** @var array */
     protected static $_instances = array();
 
     /** @var Datatable */
     protected static $_current_instance = NULL;
+
 
     /**
      * class constructor 
@@ -69,14 +73,11 @@ class Datatable
      */
     public function __construct(ContainerInterface $container)
     {
-        $this->_container   = $container;
-        $this->_config      = $this->_container->getParameter('ali_datatable');
-        $this->_em          = $this->_container->get('doctrine.orm.entity_manager');
-        $this->_request      = $this->_container->get('request');
+        $this->_container        = $container;
+        $this->_config           = $this->_container->getParameter('ali_datatable');
+        $this->_request          = Request::createFromGlobals();
         self::$_current_instance = $this;
         $this->_applyDefaults();
-
-        $this->_queryBuilder = new DoctrineBuilder($container, $this->_config);
     }
 
     /**
@@ -108,7 +109,7 @@ class Datatable
      * @param string $type
      * @param string $cond
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function addJoin($join_field, $alias, $type = Join::INNER_JOIN, $cond = '')
     {
@@ -119,20 +120,18 @@ class Datatable
     /**
      * execute
      * 
-     * @param int $hydration_mode
-     * 
-     * @return Response 
+     * @return JsonResponse
      */
-    public function execute($hydration_mode = Query::HYDRATE_ARRAY)
+    public function execute()
     {
         $request       = $this->_request;
-        $iTotalRecords = $this->_queryBuilder->getTotalRecords();
-        $data          = $this->_queryBuilder->getData($hydration_mode);
+        $iTotalRecords = $this->_queryBuilder->getTotalRecords($this->getFilterFields());
+        list($data, $objects) = $this->_queryBuilder->getData($this->getFilterFields());
         $id_index      = array_search('_identifier_', array_keys($this->getFields()));
         $ids           = array();
-        array_walk($data, function($val, $key) use ($data, $id_index, &$ids) {
-                    $ids[$key] = $val[$id_index];
-                });
+        array_walk($data, function($val, $key) use ($id_index, &$ids) {
+            $ids[$key] = $val[$id_index];
+        });
         if (!is_null($this->_fixed_data))
         {
             $this->_fixed_data = array_reverse($this->_fixed_data);
@@ -147,14 +146,14 @@ class Datatable
         }
         if (!is_null($this->_renderer_obj))
         {
-            $this->_renderer_obj->applyTo($data);
+            $this->_renderer_obj->applyTo($data, $objects);
         }
         if (!empty($this->_multiple))
         {
             array_walk($data, function($val, $key) use(&$data, $ids) {
-                        array_unshift($val, "<input type='checkbox' name='dataTables[actions][]' value='{$ids[$key]}' />");
-                        $data[$key] = $val;
-                    });
+                array_unshift($val, "<input type='checkbox' name='dataTables[actions][]' value='{$ids[$key]}' />");
+                $data[$key] = $val;
+            });
         }
         $output = array(
             "sEcho"                => intval($request->get('sEcho')),
@@ -162,7 +161,7 @@ class Datatable
             "iTotalDisplayRecords" => $iTotalRecords,
             "aaData"               => $data
         );
-        return new Response(json_encode($output));
+        return new JsonResponse($output);
     }
 
     /**
@@ -171,7 +170,7 @@ class Datatable
      * 
      * @param string $id
      * 
-     * @return Datatable .
+     * @return \Ali\DatatableBundle\Util\Datatable .
      */
     public static function getInstance($id)
     {
@@ -222,6 +221,11 @@ class Datatable
     public function getFields()
     {
         return $this->_queryBuilder->getFields();
+    }
+
+    public static function clearInstances()
+    {
+        static::$_instances = array();
     }
 
     /**
@@ -299,10 +303,10 @@ class Datatable
     /**
      * set entity
      * 
-     * @param type $entity_name
-     * @param type $entity_alias
+     * @param string $entity_name
+     * @param string $entity_alias
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setEntity($entity_name, $entity_alias)
     {
@@ -311,11 +315,24 @@ class Datatable
     }
 
     /**
+     * set entity manager
+     * 
+     * @param EntityManager $em
+     * 
+     * @return \Ali\DatatableBundle\Util\Datatable
+     */
+    public function setEntityManager(EntityManager $em)
+    {
+        $this->_queryBuilder = new DoctrineBuilder($this->_container, $em);
+        return $this;
+    }
+
+    /**
      * set fields
      * 
      * @param array $fields
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setFields(array $fields)
     {
@@ -324,11 +341,40 @@ class Datatable
     }
 
     /**
+     * Add a field
+     * 
+     * @param string $key
+     * @param string $value
+     * @return \Ali\DatatableBundle\Util\Datatable
+     */
+    public function addField($key, $value)
+    {
+        $fields       = $this->_queryBuilder->getFields() ? $this->_queryBuilder->getFields() : array();
+        $fields[$key] = $value;
+        $this->setFields($fields);
+        return $this;
+    }
+
+    /**
+     * Add an array of fields
+     * 
+     * @param array $fields
+     * @return \Ali\DatatableBundle\Util\Datatable
+     */
+    public function addFields(array $fields)
+    {
+        $oldFields = $this->_queryBuilder->getFields() ? $this->_queryBuilder->getFields() : array();
+        $newFields = array_merge($oldFields, $fields);
+        $this->setFields($newFields);
+        return $this;
+    }
+
+    /**
      * set has action
      * 
-     * @param type $has_action
+     * @param boolean $has_action
      * 
-     * @return Datatable
+     * @return \Ali\DatatableBundle\Util\Datatable
      */
     public function setHasAction($has_action)
     {
@@ -339,10 +385,10 @@ class Datatable
     /**
      * set order
      * 
-     * @param type $order_field
-     * @param type $order_type
+     * @param string $order_field
+     * @param string $order_type
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setOrder($order_field, $order_type)
     {
@@ -353,9 +399,9 @@ class Datatable
     /**
      * set fixed data
      * 
-     * @param type $data
+     * @param null|array $data
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setFixedData($data)
     {
@@ -405,7 +451,7 @@ class Datatable
      * 
      * @param \Closure $renderer
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setRenderer(\Closure $renderer)
     {
@@ -440,7 +486,7 @@ class Datatable
      * 
      * @param array $renderers
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setRenderers(array $renderers)
     {
@@ -463,7 +509,7 @@ class Datatable
      * @param string $where
      * @param array  $params
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setWhere($where, array $params = array())
     {
@@ -476,19 +522,20 @@ class Datatable
      * 
      * @param string $groupbywhere
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
-    public function setGroupBy($groupby) {
+    public function setGroupBy($groupby)
+    {
         $this->_queryBuilder->setGroupBy($groupby);
         return $this;
     }
-    
+
     /**
      * set search
      * 
      * @param bool $search
      * 
-     * @return Datatable
+     * @return \Ali\DatatableBundle\Util\Datatable
      */
     public function setSearch($search)
     {
@@ -502,7 +549,7 @@ class Datatable
      * 
      * @param string $id
      * 
-     * @return Datatable 
+     * @return \Ali\DatatableBundle\Util\Datatable 
      */
     public function setDatatableId($id)
     {
@@ -553,7 +600,7 @@ class Datatable
     {
         return $this->_config;
     }
-    
+
     /**
      * get search field
      * 
@@ -582,10 +629,44 @@ class Datatable
     }
 
     /**
-     * @param bool $experimental_querying
+     * get filter field
+     *
+     * @return array
      */
-    public function setExperimentalQuerying($experimental_querying)
+    public function getFilterFields()
     {
-        $this->_config['all']['experimental_querying'] = (bool)$experimental_querying;
+        return $this->_filter_fields;
     }
+
+    /**
+     * set filter fields
+     *
+     * @example
+     *
+     *      ->setFilterFields(array(
+     *                3 => new DatatableFilter(array(
+     *                    new DatatableFilterValue(0, $translator->trans('option.no')),
+     *                   new DatatableFilterValue(1, $translator->trans('option.yes'))
+     *                ))
+     *                4 => new DatatableFilter(array(
+     *                    new DatatableFilterValue(0, $translator->trans('option.no')),
+     *                    new DatatableFilterValue(1, $translator->trans('option.yes'))
+     *                ))
+     *
+     * @param array $filter_fields
+     *
+     * @return \Ali\DatatableBundle\Util\Datatable
+     */
+    public function setFilterFields(array $filter_fields)
+    {
+        $this->_filter_fields = $filter_fields;
+        return $this;
+    }
+
+    public function AddQueryHint($hint, $value)
+    {
+        $this->_queryBuilder->addQueryHint($hint, $value);
+        return $this;
+    }
+
 }

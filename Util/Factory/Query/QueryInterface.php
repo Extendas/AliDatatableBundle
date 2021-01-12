@@ -2,6 +2,8 @@
 
 namespace Ali\DatatableBundle\Util\Factory\Query;
 
+use Doctrine\ORM\Query\Expr\Join;
+
 interface QueryInterface
 {
 
@@ -10,16 +12,28 @@ interface QueryInterface
      * 
      * @return integer 
      */
-    function getTotalRecords();
+    function getTotalRecords(array $filter_fields=[]);
+
+    /**
+     * Add the sorting and ordering to the query
+     *
+     * @return mixed
+     */
+    function addSorting();
+
+    /**
+     * get sql query
+     *
+     * @return string
+     */
+    function getQuery(array $filter_fields=[]);
 
     /**
      * get data
      * 
-     * @param int $hydration_mode
-     * 
      * @return array
      */
-    function getData($hydration_mode);
+    function getData(array $filter_fields=[]);
 
     /**
      * set entity
@@ -53,6 +67,20 @@ interface QueryInterface
      * @return string
      */
     function getEntityAlias();
+
+    /**
+     * Get query parameters
+     *
+     * @return array
+     */
+    function getParameters();
+
+    /**
+     * Get joins
+     *
+     * @return array
+     */
+    function getJoins();
 
     /**
      * get fields
@@ -111,7 +139,7 @@ interface QueryInterface
      *
      * @return Datatable
      */
-    function setSearch($search); 
+    function setSearch($search);
 
     /**
      * add join
@@ -131,4 +159,12 @@ interface QueryInterface
      * @return Datatable 
      */
     function addJoin($join_field, $alias, $type = Join::INNER_JOIN, $cond = '');
+
+    /**
+     * @param $hint
+     * @param $value
+     *
+     * @return DoctrineBuilder
+     */
+    function AddQueryHint($hint, $value);
 }

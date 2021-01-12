@@ -1,0 +1,15 @@
+alidatatable_test_homepage:
+    path:  /
+    defaults: { _controller: TestBundle:Default:index }
+
+alidatatable_test_grid:
+    path:  /grid
+    defaults: { _controller: TestBundle:Default:grid }
+
+alidatatable_test_delete:
+    path:  /
+    defaults: { _controller: TestBundle:Default:delete }
+
+alidatatable_test_edit:
+    path:  /
+    defaults: { _controller: TestBundle:Default:edit }
