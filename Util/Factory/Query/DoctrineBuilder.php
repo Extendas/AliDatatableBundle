@@ -501,7 +501,6 @@ class DoctrineBuilder implements QueryInterface
             $ids = $id_query->getArrayResult();
             $ids = array_column($ids, 'id');
             $total_count = \count($ids);
-            $ids = array_unique($ids);
             $ids = array_slice($ids, $request->get('iDisplayStart'), $iDisplayLength);
 
             $qb->andWhere(sprintf('%s IN (:_ids_)', $this->_lowest_entity_field_id));
