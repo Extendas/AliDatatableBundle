@@ -125,11 +125,9 @@ class Datatable
     public function execute()
     {
         $request       = $this->_request;
-        list($data, $objects, $total_count) = $this->_queryBuilder->getData($this->getFilterFields());
-        if ($total_count === null)
-        {
-            $total_count = $this->_queryBuilder->getTotalRecords($this->getFilterFields());
-        }
+        list($data, $objects) = $this->_queryBuilder->getData($this->getFilterFields());
+        $total_count = $this->_queryBuilder->getTotalRecords($this->getFilterFields());
+
         $id_index      = array_search('_identifier_', array_keys($this->getFields()));
         $ids           = array();
         array_walk($data, function($val, $key) use ($id_index, &$ids) {
