@@ -4,11 +4,10 @@ namespace Ali\DatatableBundle\Util\Factory\Filter;
 
 use Util\Factory\Filter\AbstractDatatableFilterItem;
 
-class DatatableFilterValue extends AbstractDatatableFilterItem
+class DatatableFilterGroup extends AbstractDatatableFilterItem
 {
     /**
-     * @var scalar
+     * @var DatatableFilterValue[]
      */
     protected $value;
-
 }

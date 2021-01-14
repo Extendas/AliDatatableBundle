@@ -2,6 +2,8 @@
 
 namespace Ali\DatatableBundle\Util\Factory\Filter;
 
+use Util\Factory\Filter\DatatableFilterItemInterface;
+
 /**
  * Class DatatableFilter
  *
@@ -12,7 +14,7 @@ class DatatableFilter
     const SEARCH_TYPE_LIKE = 'like';
     const SEARCH_TYPE_EQUALS = 'equals';
 
-    /** @var DatatableFilterValue[] */
+    /** @var DatatableFilterItemInterface[] */
     protected $filter_values = array();
     protected $search_type;
     protected $default_value;
