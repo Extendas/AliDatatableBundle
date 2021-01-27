@@ -508,8 +508,10 @@ class DoctrineBuilder implements QueryInterface
             $qb->andWhere(sprintf('%s IN (:_ids_)', $this->_lowest_entity_field_id));
             $qb->setParameter('_ids_', array_values($ids));
         }
-        $qb->setMaxResults($display_length)->setFirstResult($request->get('iDisplayStart'));
-
+        else
+        {
+            $qb->setMaxResults($display_length)->setFirstResult($request->get('iDisplayStart'));
+        }
         // get results and process data formatting
         $query          = $qb->getQuery();
 
