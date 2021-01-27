@@ -66,6 +66,9 @@ class DoctrineBuilder implements QueryInterface
     /** @var array */
     protected $query_hints;
 
+    /** @var string|null */
+    private $_lowest_entity_field_id;
+
     /**
      * class constructor
      *
@@ -491,15 +494,28 @@ class DoctrineBuilder implements QueryInterface
         // add search
         $this->_addSearch($qb, $filter_fields);
 
+        $display_length = (int) $request->get('iDisplayLength');
+        if ($this->_lowest_entity_field_id !== null)
+        {
+            $id_qb = clone $qb;
+            $id_qb->select(sprintf('%s AS id', $this->_lowest_entity_field_id));
+            $id_qb->setMaxResults($display_length)->setFirstResult($request->get('iDisplayStart'));
+            $id_query = $id_qb->getQuery();
+
+            $ids = $id_query->getArrayResult();
+            $ids = array_column($ids, 'id');
+
+            $qb->andWhere(sprintf('%s IN (:_ids_)', $this->_lowest_entity_field_id));
+            $qb->setParameter('_ids_', array_values($ids));
+        }
+        else
+        {
+            $qb->setMaxResults($display_length)->setFirstResult($request->get('iDisplayStart'));
+        }
         // get results and process data formatting
         $query          = $qb->getQuery();
 
         $this->addQueryHintsToQuery($query);
-        $iDisplayLength = (int) $request->get('iDisplayLength');
-        if ($iDisplayLength > 0)
-        {
-            $query->setMaxResults($iDisplayLength)->setFirstResult($request->get('iDisplayStart'));
-        }
         $objects         = $query->getResult(Query::HYDRATE_OBJECT);
         $data            = array();
         $entity_alias    = $this->entity_alias;
@@ -820,4 +836,8 @@ class DoctrineBuilder implements QueryInterface
         }
     }
 
+    public function setExperimentalQuerying($lowest_entity_field_id)
+    {
+        $this->_lowest_entity_field_id = $lowest_entity_field_id;
+    }
 }
