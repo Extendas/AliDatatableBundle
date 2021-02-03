@@ -494,8 +494,8 @@ class DoctrineBuilder implements QueryInterface
         // add search
         $this->_addSearch($qb, $filter_fields);
 
-        $display_length = (int) $request->get('iDisplayLength', 10);
-        $display_start = (int) $request->get('iDisplayStart', 0);
+        $display_length = (int) $request->get('iDisplayLength');
+        $display_start = (int) $request->get('iDisplayStart');
         if($display_length > 10000) //Magic!
         {
             $display_length = 10000;
@@ -504,7 +504,10 @@ class DoctrineBuilder implements QueryInterface
         {
             $id_qb = clone $qb;
             $id_qb->select(sprintf('%s AS id', $this->_lowest_entity_field_id));
-            $id_qb->setMaxResults($display_length)->setFirstResult($display_start);
+            if ($display_length > 0)
+            {
+                $id_qb->setMaxResults($display_length)->setFirstResult($display_start);
+            }
             $id_query = $id_qb->getQuery();
 
             $ids = $id_query->getArrayResult();
@@ -513,7 +516,7 @@ class DoctrineBuilder implements QueryInterface
             $qb->andWhere(sprintf('%s IN (:_ids_)', $this->_lowest_entity_field_id));
             $qb->setParameter('_ids_', array_values($ids));
         }
-        else
+        elseif ($display_length > 0)
         {
             $qb->setMaxResults($display_length)->setFirstResult($display_start);
         }
