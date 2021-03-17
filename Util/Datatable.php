@@ -340,7 +340,10 @@ class Datatable
     public function setEntity($entity_name, $entity_alias, $forced_index = null)
     {
         $this->_queryBuilder->setEntity($entity_name, $entity_alias);
-        $this->getQueryBuilder()->addForcedIndex($entity_alias, $forced_index);
+        if ($forced_index !== null)
+        {
+            $this->getQueryBuilder()->addForcedIndex($entity_alias, $forced_index);
+        }
         return $this;
     }
 
