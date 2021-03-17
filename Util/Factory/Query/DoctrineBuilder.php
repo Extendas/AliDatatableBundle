@@ -479,7 +479,7 @@ class DoctrineBuilder implements QueryInterface
     public function getData(array $filter_fields=[])
     {
         $request    = $this->request;
-        
+
         $qb = $this->addSorting();
 
         // extract alias selectors
@@ -522,6 +522,7 @@ class DoctrineBuilder implements QueryInterface
                 $id_qb->setMaxResults($display_length)->setFirstResult($display_start);
             }
             $id_query = $id_qb->getQuery();
+            $this->addForcedIndexesToQuery($id_query);
 
             $ids = $id_query->getArrayResult();
             $ids = array_column($ids, 'id');
@@ -537,7 +538,10 @@ class DoctrineBuilder implements QueryInterface
         $query          = $qb->getQuery();
 
         $this->addQueryHintsToQuery($query);
-        $this->addForcedIndexesToQuery($query);
+        if ($this->_lowest_entity_field_id === null)
+        {
+            $this->addForcedIndexesToQuery($query);
+        }
         $objects         = $query->getResult(Query::HYDRATE_OBJECT);
         $data            = array();
         $entity_alias    = $this->entity_alias;
