@@ -167,4 +167,6 @@ interface QueryInterface
      * @return DoctrineBuilder
      */
     function AddQueryHint($hint, $value);
+
+    function addForcedIndex($alias, $force_index);
 }

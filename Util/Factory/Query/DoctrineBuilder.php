@@ -11,6 +11,7 @@ use Ali\DatatableBundle\Util\Factory\Filter\DateTimeFilter;
 use Ali\DatatableBundle\Util\Factory\Filter\MultiSelectFilter;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
+use Ggergo\SqlIndexHintBundle\SqlIndexWalker;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Ali\DatatableBundle\Util\Factory\Fields\DQLDatatableField;
@@ -65,6 +66,9 @@ class DoctrineBuilder implements QueryInterface
 
     /** @var array */
     protected $query_hints;
+
+    /** @var array */
+    protected $forced_indexes;
 
     /** @var string|null */
     private $_lowest_entity_field_id;
@@ -466,7 +470,7 @@ class DoctrineBuilder implements QueryInterface
     public function getData(array $filter_fields=[])
     {
         $request    = $this->request;
-
+        
         $qb = $this->addSorting();
 
         // extract alias selectors
@@ -524,6 +528,7 @@ class DoctrineBuilder implements QueryInterface
         $query          = $qb->getQuery();
 
         $this->addQueryHintsToQuery($query);
+        $this->addForcedIndexesToQuery($query);
         $objects         = $query->getResult(Query::HYDRATE_OBJECT);
         $data            = array();
         $entity_alias    = $this->entity_alias;
@@ -847,5 +852,28 @@ class DoctrineBuilder implements QueryInterface
     public function setExperimentalQuerying($lowest_entity_field_id)
     {
         $this->_lowest_entity_field_id = $lowest_entity_field_id;
+    }
+
+    /**
+     * @param Query $query
+     */
+    private function addForcedIndexesToQuery(Query $query)
+    {
+        if (empty($this->forced_indexes))
+        {
+            return;
+        }
+
+        $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, SqlIndexWalker::class);
+        $query->setHint(SqlIndexWalker::HINT_INDEX, $this->forced_indexes);
+    }
+
+    /**
+     * @param $alias
+     * @param $force_index
+     */
+    function addForcedIndex($alias, $force_index)
+    {
+        $this->forced_indexes[$alias] = sprintf('FORCE INDEX (%s)', $force_index);
     }
 }
