@@ -340,19 +340,24 @@ class DoctrineBuilder implements QueryInterface
         // queries with having are very annoying.. but this will find them and use an SQL subquery to deal with them.
         // Note this same method could be used fully instead of the below, but I don't trust the code enough for
         // use in all of SPIN for now..
-        if ($qb->getDQLPart('having')) {
+        if ($qb->getDQLPart('having'))
+        {
             // in case of having, we need the OVER() function from native SQL
             $qb->select(" count(distinct {$this->fields['_identifier_']}) as sclr0");
             $query = $qb->getQuery();
 
             // annoying Doctrine version difference sclr0 vs sclr_0
-            if (strpos($query->getSQL(), 'sclr_0') !== false) {
+            if (strpos($query->getSQL(), 'sclr_0') !== false)
+            {
                 $sclr = 'sclr_0';
-            } else {
+            }
+            else
+            {
                 $sclr = 'sclr0';
             }
 
             $params = $this->getSQLParamsFromQuery($query);
+            $this->addForcedIndexesToQuery($query);
             // trick here is to use a subquery suming the sclr0 distinct count
             $sql = "SELECT SUM($sclr) as total FROM (" . $query->getSQL() . ") AS sumqry";
             $result = $this->executeNativeSQL($sql, $params);
@@ -363,13 +368,17 @@ class DoctrineBuilder implements QueryInterface
         if (empty($gb) || !in_array($this->fields['_identifier_'], $gb))
         {
             $qb->select(" count({$this->fields['_identifier_']}) ");
-            return $qb->getQuery()->getSingleScalarResult();
+            $query = $qb->getQuery();
+            $this->addForcedIndexesToQuery($query);
+            return $query->getSingleScalarResult();
         }
         else
         {
             $qb->resetDQLPart('groupBy');
             $qb->select(" count(distinct {$this->fields['_identifier_']}) ");
-            return $qb->getQuery()->getSingleScalarResult();
+            $query = $qb->getQuery();
+            $this->addForcedIndexesToQuery($query);
+            return $query->getSingleScalarResult();
         }
     }
 
