@@ -65,7 +65,6 @@ class Datatable
     /** @var Datatable */
     protected static $_current_instance = NULL;
 
-
     /**
      * class constructor 
      * 
@@ -114,6 +113,34 @@ class Datatable
     public function addJoin($join_field, $alias, $type = Join::INNER_JOIN, $cond = '')
     {
         $this->_queryBuilder->addJoin($join_field, $alias, $type, $cond);
+        return $this;
+    }
+
+    /**
+     * add join
+     *
+     * @example:
+     *      ->setJoin(
+     *              'r.event',
+     *              'e',
+     *              \Doctrine\ORM\Query\Expr\Join::INNER_JOIN,
+     *              'e.name like %test%')
+     *
+     * @param string $join_field
+     * @param string $alias
+     * @param string $type
+     * @param string $cond
+     * @param null $force_index
+     *
+     * @return \Ali\DatatableBundle\Util\Datatable
+     */
+    public function addJoinWithForcedIndex($join_field, $alias, $type = Join::INNER_JOIN, $cond = '', $force_index = null)
+    {
+        $this->addJoin($join_field, $alias, $type, $cond);
+        if ($force_index !== null)
+        {
+            $this->getQueryBuilder()->addForcedIndex($alias, $force_index);
+        }
         return $this;
     }
 
@@ -303,15 +330,20 @@ class Datatable
 
     /**
      * set entity
-     * 
+     *
      * @param string $entity_name
      * @param string $entity_alias
-     * 
-     * @return \Ali\DatatableBundle\Util\Datatable 
+     * @param null $forced_index
+     *
+     * @return \Ali\DatatableBundle\Util\Datatable
      */
-    public function setEntity($entity_name, $entity_alias)
+    public function setEntity($entity_name, $entity_alias, $forced_index = null)
     {
         $this->_queryBuilder->setEntity($entity_name, $entity_alias);
+        if ($forced_index !== null)
+        {
+            $this->getQueryBuilder()->addForcedIndex($entity_alias, $forced_index);
+        }
         return $this;
     }
 

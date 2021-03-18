@@ -11,6 +11,7 @@ use Ali\DatatableBundle\Util\Factory\Filter\DateTimeFilter;
 use Ali\DatatableBundle\Util\Factory\Filter\MultiSelectFilter;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
+use Ggergo\SqlIndexHintBundle\SqlIndexWalker;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Ali\DatatableBundle\Util\Factory\Fields\DQLDatatableField;
@@ -65,6 +66,9 @@ class DoctrineBuilder implements QueryInterface
 
     /** @var array */
     protected $query_hints;
+
+    /** @var array */
+    protected $forced_indexes;
 
     /** @var string|null */
     private $_lowest_entity_field_id;
@@ -336,19 +340,24 @@ class DoctrineBuilder implements QueryInterface
         // queries with having are very annoying.. but this will find them and use an SQL subquery to deal with them.
         // Note this same method could be used fully instead of the below, but I don't trust the code enough for
         // use in all of SPIN for now..
-        if ($qb->getDQLPart('having')) {
+        if ($qb->getDQLPart('having'))
+        {
             // in case of having, we need the OVER() function from native SQL
             $qb->select(" count(distinct {$this->fields['_identifier_']}) as sclr0");
             $query = $qb->getQuery();
 
             // annoying Doctrine version difference sclr0 vs sclr_0
-            if (strpos($query->getSQL(), 'sclr_0') !== false) {
+            if (strpos($query->getSQL(), 'sclr_0') !== false)
+            {
                 $sclr = 'sclr_0';
-            } else {
+            }
+            else
+            {
                 $sclr = 'sclr0';
             }
 
             $params = $this->getSQLParamsFromQuery($query);
+            $this->addForcedIndexesToQuery($query);
             // trick here is to use a subquery suming the sclr0 distinct count
             $sql = "SELECT SUM($sclr) as total FROM (" . $query->getSQL() . ") AS sumqry";
             $result = $this->executeNativeSQL($sql, $params);
@@ -359,13 +368,17 @@ class DoctrineBuilder implements QueryInterface
         if (empty($gb) || !in_array($this->fields['_identifier_'], $gb))
         {
             $qb->select(" count({$this->fields['_identifier_']}) ");
-            return $qb->getQuery()->getSingleScalarResult();
+            $query = $qb->getQuery();
+            $this->addForcedIndexesToQuery($query);
+            return $query->getSingleScalarResult();
         }
         else
         {
             $qb->resetDQLPart('groupBy');
             $qb->select(" count(distinct {$this->fields['_identifier_']}) ");
-            return $qb->getQuery()->getSingleScalarResult();
+            $query = $qb->getQuery();
+            $this->addForcedIndexesToQuery($query);
+            return $query->getSingleScalarResult();
         }
     }
 
@@ -509,6 +522,7 @@ class DoctrineBuilder implements QueryInterface
                 $id_qb->setMaxResults($display_length)->setFirstResult($display_start);
             }
             $id_query = $id_qb->getQuery();
+            $this->addForcedIndexesToQuery($id_query);
 
             $ids = $id_query->getArrayResult();
             $ids = array_column($ids, 'id');
@@ -524,6 +538,10 @@ class DoctrineBuilder implements QueryInterface
         $query          = $qb->getQuery();
 
         $this->addQueryHintsToQuery($query);
+        if ($this->_lowest_entity_field_id === null)
+        {
+            $this->addForcedIndexesToQuery($query);
+        }
         $objects         = $query->getResult(Query::HYDRATE_OBJECT);
         $data            = array();
         $entity_alias    = $this->entity_alias;
@@ -847,5 +865,28 @@ class DoctrineBuilder implements QueryInterface
     public function setExperimentalQuerying($lowest_entity_field_id)
     {
         $this->_lowest_entity_field_id = $lowest_entity_field_id;
+    }
+
+    /**
+     * @param Query $query
+     */
+    private function addForcedIndexesToQuery(Query $query)
+    {
+        if (empty($this->forced_indexes))
+        {
+            return;
+        }
+
+        $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, SqlIndexWalker::class);
+        $query->setHint(SqlIndexWalker::HINT_INDEX, $this->forced_indexes);
+    }
+
+    /**
+     * @param $alias
+     * @param $force_index
+     */
+    function addForcedIndex($alias, $force_index)
+    {
+        $this->forced_indexes[$alias] = sprintf('FORCE INDEX (%s)', $force_index);
     }
 }

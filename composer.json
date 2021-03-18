@@ -16,7 +16,8 @@
         "php": "~5.5|~7.0",
         "twig/twig": ">=1.8",
         "doctrine/orm": "~2.3",
-        "doctrine/doctrine-bundle": "~1.0"
+        "doctrine/doctrine-bundle": "~1.0",
+        "ggergo/sqlindexhintbundle": "^1.0"
     },
     "target-dir": "Ali/DatatableBundle",
     "autoload": {
