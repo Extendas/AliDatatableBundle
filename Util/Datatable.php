@@ -662,6 +662,33 @@ class Datatable
     }
 
     /**
+     * add query where
+     *
+     * @param string $where
+     *
+     * @return Datatable
+     */
+    public function andWhere($where)
+    {
+        $this->_queryBuilder->andWhere($where);
+        return $this;
+    }
+
+    /**
+     * add query parameter
+     *
+     * @param $key
+     * @param $value
+     *
+     * @return Datatable
+     */
+    public function setParameter($key, $value)
+    {
+        $this->_queryBuilder->setParameter($key, $value);
+        return $this;
+    }
+
+    /**
      * get filter field
      *
      * @return array

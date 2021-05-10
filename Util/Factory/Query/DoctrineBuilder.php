@@ -882,6 +882,28 @@ class DoctrineBuilder implements QueryInterface
     }
 
     /**
+     * add query where
+     *
+     * @param string $where
+     *
+     */
+    public function andWhere($where)
+    {
+        $this->queryBuilder->andWhere($where);
+    }
+
+    /**
+     * add query parameter
+     *
+     * @param $key
+     * @param $value
+     */
+    public function setParameter($key, $value)
+    {
+        $this->queryBuilder->setParameter($key, $value);
+    }
+
+    /**
      * @param $alias
      * @param $force_index
      */
