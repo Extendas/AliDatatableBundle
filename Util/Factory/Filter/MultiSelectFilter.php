@@ -20,13 +20,13 @@ class MultiSelectFilter extends DatatableFilter
      * @param string $search_type
      * @param $search_field
      */
-    public function __construct(string $search_field, array $entities, $label_getter = '__toString()', $value_getter = 'getId()')
+    public function __construct(string $search_field, array $entities, $label_getter = '__toString', $value_getter = 'getId')
     {
         $filters = [];
         foreach ($entities as $entity)
         {
-            $value = $entity->$value_getter();
-            $label = $entity->$label_getter();
+            $value = $entity->{$value_getter}();
+            $label = $entity->{$label_getter}();
             $filters[] = new DatatableFilterValue($value, $label);
         }
 
