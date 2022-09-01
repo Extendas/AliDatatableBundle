@@ -25,8 +25,8 @@ class MultiSelectFilter extends DatatableFilter
         $filters = [];
         foreach ($entities as $entity)
         {
-            $value = $entity->{$value_getter}();
-            $label = $entity->{$label_getter}();
+            $value = $entity->{$value_getter};
+            $label = $entity->{$label_getter};
             $filters[] = new DatatableFilterValue($value, $label);
         }
 
