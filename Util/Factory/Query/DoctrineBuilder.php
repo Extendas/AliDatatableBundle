@@ -153,13 +153,24 @@ class DoctrineBuilder implements QueryInterface
                         $search_field = $filter_fields[$i]->getSearchField();
                         $parts = explode(',', $search_param);
 
-                        $ors = [];
-                        foreach ($parts as $k=>$part)
+                        if (\count($parts) === 1)
                         {
-                            $ors[] = "$search_field = :ssearch{$i}_part{$k}";
-                            $queryBuilder->setParameter("ssearch{$i}_part{$k}", trim($part));
+                            $first_part = reset($parts);
+
+                            $queryBuilder->andWhere("$search_field = :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", trim($first_part));
                         }
-                        $queryBuilder->andWhere(implode(' OR ', $ors));
+                        else
+                        {
+                            $search_values = [];
+                            foreach ($parts as $part)
+                            {
+                                $search_values[] = trim($part);
+                            }
+                            $parameter_name = "ssearch_values{$i}";
+                            $queryBuilder->andWhere("$search_field IN (:$parameter_name)");
+                            $queryBuilder->setParameter($parameter_name, $search_values);
+                        }
 
                         continue;
                     }
