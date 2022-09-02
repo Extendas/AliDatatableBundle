@@ -174,6 +174,36 @@ class DoctrineBuilder implements QueryInterface
 
                         continue;
                     }
+                    elseif (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter)
+                    {
+                        $actual_search_field = $filter_fields[$i]->getSearchField() ?: $search_field;
+                        dump($filter_fields[$i]->getSearchField());
+                        dump($search_field);
+                        dump($actual_search_field);
+                        die();
+                        $parts = explode(',', $search_param);
+
+                        if (\count($parts) === 1)
+                        {
+                            $first_part = reset($parts);
+
+                            $queryBuilder->andWhere("$search_field = :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", trim($first_part));
+                        }
+                        else
+                        {
+                            $search_values = [];
+                            foreach ($parts as $part)
+                            {
+                                $search_values[] = trim($part);
+                            }
+                            $parameter_name = "ssearch_values{$i}";
+                            $queryBuilder->andWhere("$search_field IN (:$parameter_name)");
+                            $queryBuilder->setParameter($parameter_name, $search_values);
+                        }
+
+                        continue;
+                    }
                     elseif ($original_field !== null && is_array($original_field) && current($original_field) instanceof DQLDatatableField)
                     {
                         $original_field = current($original_field);
