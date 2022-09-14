@@ -174,29 +174,6 @@ class DoctrineBuilder implements QueryInterface
 
                         continue;
                     }
-                    elseif (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter)
-                    {
-                        $actual_search_field = $filter_fields[$i]->getSearchField() ?: $search_field;
-                        $parts = explode(',', $search_param);
-                        if ($filter_fields[$i]->getMultiSelectEnabled() && \count($parts) > 1)
-                        {
-                            $search_values = [];
-                            foreach ($parts as $part)
-                            {
-                                $search_values[] = trim($part);
-                            }
-                            $parameter_name = "ssearch_values{$i}";
-                            $queryBuilder->andWhere("$actual_search_field IN (:$parameter_name)");
-                            $queryBuilder->setParameter($parameter_name, $search_values);
-                        }
-                        else
-                        {
-                            $queryBuilder->andWhere("$actual_search_field = :ssearch{$i}");
-                            $queryBuilder->setParameter("ssearch{$i}", trim($search_param));
-                        }
-
-                        continue;
-                    }
                     elseif ($original_field !== null && is_array($original_field) && current($original_field) instanceof DQLDatatableField)
                     {
                         $original_field = current($original_field);
@@ -248,6 +225,34 @@ class DoctrineBuilder implements QueryInterface
                             $first_field = false;
                         }
                         $queryBuilder->andWhere($query);
+                    }
+                    elseif (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter)
+                    {
+                        $actual_search_field = $filter_fields[$i]->getSearchField() ?: $search_field;
+                        $parts = explode(',', $search_param);
+                        if ($filter_fields[$i]->getMultiSelectEnabled() && \count($parts) > 1)
+                        {
+                            $search_values = [];
+                            foreach ($parts as $part)
+                            {
+                                $search_values[] = trim($part);
+                            }
+                            $parameter_name = "ssearch_values{$i}";
+                            $queryBuilder->andWhere("$actual_search_field IN (:$parameter_name)");
+                            $queryBuilder->setParameter($parameter_name, $search_values);
+                        }
+                        elseif ($filter_fields[$i]->getSearchType() === DatatableFilter::SEARCH_TYPE_LIKE)
+                        {
+                            $queryBuilder->andWhere("$actual_search_field like :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", sprintf('%%%s%%', trim($search_param)));
+                        }
+                        else
+                        {
+                            $queryBuilder->andWhere("$actual_search_field = :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", trim($search_param));
+                        }
+
+                        continue;
                     }
                     else
                     {
