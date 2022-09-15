@@ -190,7 +190,7 @@ class DoctrineBuilder implements QueryInterface
                         is_array($original_field) &&
                         reset($original_field) instanceof EntityDatatableField &&
                         reset($original_field)->getEntityFields() != null &&
-                        (isset($filter_fields[$i]) && !($filter_fields[$i] instanceof DatatableFilter))
+                        (!isset($filter_fields[$i]) || (isset($filter_fields[$i]) && !($filter_fields[$i] instanceof DatatableFilter)))
                     )
                     {
                         // 1. get the entity fields
