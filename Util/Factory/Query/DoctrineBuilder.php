@@ -185,7 +185,13 @@ class DoctrineBuilder implements QueryInterface
                             $queryBuilder->andWhere(" $search_field $equals_operator :ssearch{$i} ");
                         }
                     }
-                    elseif ($original_field !== null && is_array($original_field) && reset($original_field) instanceof EntityDatatableField && reset($original_field)->getEntityFields() != null)
+                    elseif (
+                        $original_field !== null &&
+                        is_array($original_field) &&
+                        reset($original_field) instanceof EntityDatatableField &&
+                        reset($original_field)->getEntityFields() != null &&
+                        (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter)
+                    )
                     {
                         // 1. get the entity fields
                         $entity_search_fields = reset($original_field)->getEntityFields();
