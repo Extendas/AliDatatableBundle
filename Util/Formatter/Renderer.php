@@ -45,7 +45,7 @@ class Renderer
     public function applyView($view_path, array $params)
     {
         $out = $this->_container
-                ->get('templating')
+                ->get('twig')
                 ->render($view_path, $params);
         return html_entity_decode($out);
     }
@@ -84,7 +84,7 @@ class Renderer
                 }
                 else
                 {
-                    $view = 'AliDatatableBundle:Renderers:_default.html.twig';
+                    $view = '@AliDatatable/Renderers/_default.html.twig';
                 }
                 $params                          = array_merge($params, array(
                     'dt_obj'  => $objects[$row_index],
