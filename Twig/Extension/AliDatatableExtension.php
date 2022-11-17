@@ -86,21 +86,21 @@ class AliDatatableExtension extends \Twig_Extension
         $options['multiple']      = $dt->getMultiple();
         $options['sort']          = is_null($dt->getOrderField()) ? NULL : array(array_search(
                     $dt->getOrderField(), array_values($dt->getFields())), $dt->getOrderType());
-        $main_template            = 'AliDatatableBundle:Main:index.html.twig';
+        $main_template            = '@AliDatatable/Main/index.html.twig';
         if (isset($options['main_template']))
         {
             $main_template = $options['main_template'];
         }
         $session                  = $this->_container->get('session');
         $rawjs                    = $this->_container
-                ->get('templating')
+                ->get('twig')
                 ->render('@AliDatatable/Internal/script.html.twig', $options);
         $sess_dtb                 = $session->get('datatable', array());
         $sess_dtb[$options['id']] = $rawjs;
         $session->set('datatable', $sess_dtb);
 
         return $this->_container
-                        ->get('templating')
+                        ->get('twig')
                         ->render($main_template, $options);
     }
 

@@ -153,13 +153,24 @@ class DoctrineBuilder implements QueryInterface
                         $search_field = $filter_fields[$i]->getSearchField();
                         $parts = explode(',', $search_param);
 
-                        $ors = [];
-                        foreach ($parts as $k=>$part)
+                        if (\count($parts) === 1)
                         {
-                            $ors[] = "$search_field = :ssearch{$i}_part{$k}";
-                            $queryBuilder->setParameter("ssearch{$i}_part{$k}", trim($part));
+                            $first_part = reset($parts);
+
+                            $queryBuilder->andWhere("$search_field = :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", trim($first_part));
                         }
-                        $queryBuilder->andWhere(implode(' OR ', $ors));
+                        else
+                        {
+                            $search_values = [];
+                            foreach ($parts as $part)
+                            {
+                                $search_values[] = trim($part);
+                            }
+                            $parameter_name = "ssearch_values{$i}";
+                            $queryBuilder->andWhere("$search_field IN (:$parameter_name)");
+                            $queryBuilder->setParameter($parameter_name, $search_values);
+                        }
 
                         continue;
                     }
@@ -174,7 +185,17 @@ class DoctrineBuilder implements QueryInterface
                             $queryBuilder->andWhere(" $search_field $equals_operator :ssearch{$i} ");
                         }
                     }
-                    elseif ($original_field !== null && is_array($original_field) && reset($original_field) instanceof EntityDatatableField && reset($original_field)->getEntityFields() != null)
+                    elseif (
+                        $original_field !== null &&
+                        is_array($original_field) &&
+                        reset($original_field) instanceof EntityDatatableField &&
+                        reset($original_field)->getEntityFields() != null &&
+                        (
+                            !isset($filter_fields[$i]) ||
+                            (isset($filter_fields[$i]) && !($filter_fields[$i] instanceof DatatableFilter)) ||
+                            ((isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter && $filter_fields[$i]->getSearchField() === null))
+                        )
+                    )
                     {
                         // 1. get the entity fields
                         $entity_search_fields = reset($original_field)->getEntityFields();
@@ -214,6 +235,34 @@ class DoctrineBuilder implements QueryInterface
                             $first_field = false;
                         }
                         $queryBuilder->andWhere($query);
+                    }
+                    elseif (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter)
+                    {
+                        $actual_search_field = $filter_fields[$i]->getSearchField() ?: $search_field;
+                        $parts = explode(',', $search_param);
+                        if ($filter_fields[$i]->getMultiSelectEnabled() && \count($parts) > 1)
+                        {
+                            $search_values = [];
+                            foreach ($parts as $part)
+                            {
+                                $search_values[] = trim($part);
+                            }
+                            $parameter_name = "ssearch_values{$i}";
+                            $queryBuilder->andWhere("$actual_search_field IN (:$parameter_name)");
+                            $queryBuilder->setParameter($parameter_name, $search_values);
+                        }
+                        elseif ($filter_fields[$i]->getSearchType() === DatatableFilter::SEARCH_TYPE_LIKE)
+                        {
+                            $queryBuilder->andWhere("$actual_search_field like :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", sprintf('%%%s%%', trim($search_param)));
+                        }
+                        else
+                        {
+                            $queryBuilder->andWhere("$actual_search_field = :ssearch{$i}");
+                            $queryBuilder->setParameter("ssearch{$i}", trim($search_param));
+                        }
+
+                        continue;
                     }
                     else
                     {

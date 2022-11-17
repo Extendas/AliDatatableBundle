@@ -12,8 +12,11 @@ class DatatableFilter
     const SEARCH_TYPE_LIKE = 'like';
     const SEARCH_TYPE_EQUALS = 'equals';
 
+    protected $search_field = null; //defaults to the field for the column this filter is placed on.
+    protected $multi_select_enabled = false;
+
     /** @var DatatableFilterValue[] */
-    protected $filter_values = array();
+    protected $filter_values = [];
     protected $search_type;
     protected $default_value;
 
@@ -23,11 +26,13 @@ class DatatableFilter
      * @param string $search_type
      * @param mixed $default_value
      */
-    public function __construct(array $filter_values, $search_type=self::SEARCH_TYPE_EQUALS, $default_value = null)
+    public function __construct(array $filter_values, $search_type = self::SEARCH_TYPE_EQUALS, $default_value = null, $search_field = null, $multi_select_enabled = false)
     {
         $this->filter_values = $filter_values;
         $this->search_type = $search_type;
         $this->default_value = $default_value;
+        $this->search_field = $search_field;
+        $this->multi_select_enabled = $multi_select_enabled;
     }
 
     /**
@@ -95,6 +100,26 @@ class DatatableFilter
         return $this;
     }
 
+    public function getSearchField()
+    {
+        return $this->search_field;
+    }
+
+    public function setSearchField($search_field)
+    {
+        $this->search_field = $search_field;
+    }
+
+    public function getMultiSelectEnabled()
+    {
+        return $this->multi_select_enabled;
+    }
+
+    public function setMultiSelectEnabled($multi_select_enabled)
+    {
+        $this->multi_select_enabled = $multi_select_enabled;
+    }
+
     /**
      * Static helper to easily create boolean filter
      *
@@ -105,11 +130,10 @@ class DatatableFilter
      */
     public static function constructBooleanFilter($yes_label = 'yes', $no_label = 'no', $default_value = null)
     {
-        return new self(
-            array(
+        return new self([
                 new DatatableFilterValue(1, $yes_label),
                 new DatatableFilterValue(0, $no_label)
-            ),
+            ],
             self::SEARCH_TYPE_EQUALS,
             ($default_value !== null ? (int)$default_value : null)
         );
@@ -122,7 +146,7 @@ class DatatableFilter
      * @param string $getter
      * @return DatatableFilter
      */
-    public static function constructEntityFilter(array $entities, $getter='__toString()')
+    public static function constructEntityFilter(array $entities, $getter = '__toString')
     {
         $filters = [];
         foreach ($entities as $entity)
@@ -131,5 +155,25 @@ class DatatableFilter
             $filters[] = new DatatableFilterValue($value, $value);
         }
         return new self($filters);
+    }
+
+    /**
+     * Static helper to create filter for array of entities
+     *
+     * @param array  $entities
+     * @param string $label_getter
+     *
+     * @return DatatableFilter
+     */
+    public static function constructEntityFilterV2($search_field, array $entities, $label_getter = '__toString', $value_getter = 'getId', $multi_select_enabled = false)
+    {
+        $filters = [];
+        foreach ($entities as $entity)
+        {
+            $label = $entity->$label_getter();
+            $value = $entity->$value_getter();
+            $filters[] = new DatatableFilterValue($value, $label);
+        }
+        return new self($filters, self::SEARCH_TYPE_EQUALS, null, $search_field, $multi_select_enabled);
     }
 }
