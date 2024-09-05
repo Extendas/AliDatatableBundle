@@ -14,7 +14,7 @@ namespace Ali\DatatableBundle\EventListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Flash\AutoExpireFlashBag;
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -32,10 +32,10 @@ class DatatableListener implements EventSubscriberInterface
     /**
      * On kernel response event
      * 
-     * @param FilterResponseEvent $event
+     * @param ResponseEvent $event
      * @return void|null
      */
-    public function onKernelResponse(FilterResponseEvent $event)
+    public function onKernelResponse(ResponseEvent $event)
     {
         $response = $event->getResponse();
         $request  = $event->getRequest();
