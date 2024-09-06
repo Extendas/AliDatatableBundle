@@ -58,6 +58,10 @@ class DatatableListener implements EventSubscriberInterface
     protected function _injectDatatableScript(Response $response, Request $request)
     {
         $content  = $response->getContent();
+        if (!is_string($content))
+        {
+            return;
+        }
         $pos_body = strripos($content, '</body>');
         if (!$pos_body)
         {
@@ -66,16 +70,16 @@ class DatatableListener implements EventSubscriberInterface
         $session       = $request->getSession();
         $dom           = '<script id="alidatatable-scripts" type="text/javascript">';
         $pos_container = strripos($content, 'alidatatable-scripts');
-        $sess_dta      = $session->get('datatable',array());
+        $sess_dta      = $session->get('datatable', []);
         $dta_script    = null;
         if ($sess_dta)
         {
-            array_walk($sess_dta, function(&$part, &$key) {
-                $part = trim(preg_replace('/\s\s+/', ' ', $part));
+            array_walk($sess_dta, function($part, $key) use (&$sess_dta) {
+                $sess_dta[$key] = trim(preg_replace('/\s\s+/', ' ', $part));
             });
             $dta_script = implode("\n", $sess_dta);
         }
-        $session->set('datatable', array());
+        $session->set('datatable', []);
         if (!$pos_container)
         {
             $dta_container = $dom;
