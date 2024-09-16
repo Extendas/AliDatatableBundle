@@ -13,8 +13,8 @@
         }
     ],
     "require": {
-        "php": "~5.5|~7.0|~8.0",
-        "twig/twig": ">=1.8",
+        "php": "~7.4|~8.0",
+        "twig/twig": ">=2.9",
         "doctrine/orm": "~2.3",
         "doctrine/doctrine-bundle": "~1.0|~2.0",
         "ggergo/sqlindexhintbundle": "^1.0"
