@@ -367,8 +367,8 @@ class DoctrineBuilder implements QueryInterface
         }
 
         $stmt = $this->queryBuilder->getEntityManager()->getConnection()->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        $result = $stmt->executeQuery();
+        return $result->fetchAllAssociative();
     }
 
     /**
