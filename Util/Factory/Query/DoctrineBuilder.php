@@ -116,13 +116,16 @@ class DoctrineBuilder implements QueryInterface
                     $original_field = array_slice($this->fields, $i, 1);
                     if (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DateTimeFilter)
                     {
-                        $parts = explode(" - ", $search_param);
                         $start = $filter_fields[$i]->getDefaultStart();
                         $end = $filter_fields[$i]->getDefaultEnd();
-                        if (\count($parts) === 2)
+                        if ($search_param)
                         {
-                            $start = new \DateTime($parts[0]);
-                            $end = new \DateTime($parts[1]);
+                            $parts = explode(" - ", $search_param);
+                            if (\count($parts) === 2)
+                            {
+                                $start = new \DateTime($parts[0]);
+                                $end = new \DateTime($parts[1]);
+                            }
                         }
 
                         if (false === $filter_fields[$i]->isFilterTime())
