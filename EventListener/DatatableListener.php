@@ -87,7 +87,10 @@ class DatatableListener implements EventSubscriberInterface
             $response->setContent($content);
         }
         $pos_dta = strripos($content, $dom);
-        $content = substr_replace($content, $dta_script, $pos_dta + strlen($dom), 0);
+        if ($dta_script)
+        {
+            $content = substr_replace($content, $dta_script, $pos_dta + strlen($dom), 0);
+        }
         $response->setContent($content);
     }
 
