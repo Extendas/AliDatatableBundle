@@ -111,6 +111,10 @@ class DoctrineBuilder implements QueryInterface
 
                 $filter = $filter_fields[$i] ?? null;
                 $is_required_date_filter = $filter && $filter instanceof DateTimeFilter && $filter->isRequired();
+                if (!$search_field instanceof DatatableField)
+                {
+                    $search_field = new DatatableField($search_field);
+                }
                 if ($search_param !== false && $search_param != '' || $is_required_date_filter)
                 {
                     $this->addSearchForColumn($queryBuilder, $search_param, $i, $search_field, $filter);
