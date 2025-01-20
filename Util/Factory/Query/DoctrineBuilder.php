@@ -123,7 +123,7 @@ class DoctrineBuilder implements QueryInterface
         }
     }
 
-    private function getJoinAliasForEntityField(\Doctrine\ORM\QueryBuilder $queryBuilder, EntityDatatableField $field, int $index, string $search_mode, $search_value, ?DatatableFilter $filter): string
+    private function getJoinAliasForEntityField(\Doctrine\ORM\QueryBuilder $queryBuilder, EntityDatatableField $field, int $index): string
     {
         $joined_field_alias = null;
         foreach ($this->joins as $join)
@@ -143,7 +143,7 @@ class DoctrineBuilder implements QueryInterface
         return $joined_field_alias;
     }
 
-    public function addSearchForColumn(\Doctrine\ORM\QueryBuilder $queryBuilder, string $search_value, int $index, DatatableField $field, ?DatatableFilter $filter)
+    public function addSearchForColumn(\Doctrine\ORM\QueryBuilder $queryBuilder, ?string $search_value, int $index, DatatableField $field, ?DatatableFilter $filter)
     {
         $search_field = $field->getField();
         $search_mode = self::SEARCH_MODE_LIKE;
@@ -159,7 +159,7 @@ class DoctrineBuilder implements QueryInterface
             {
                 $search_mode = self::SEARCH_MODE_OR_LIKE;
             }
-            $entity_field_alias = $this->getJoinAliasForEntityField($queryBuilder, $field, $index, $search_mode, $search_value, $filter);
+            $entity_field_alias = $this->getJoinAliasForEntityField($queryBuilder, $field, $index);
             if (\count($field->getEntityFields()) === 1)
             {
                 $search_field = "{$entity_field_alias}.{$field->getEntityFields()[0]}";
