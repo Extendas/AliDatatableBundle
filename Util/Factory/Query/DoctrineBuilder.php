@@ -110,7 +110,7 @@ class DoctrineBuilder implements QueryInterface
                 $search_param = $request->get("sSearch_{$i}");
 
                 $filter = $filter_fields[$i] ?? null;
-                $is_required_date_filter = $filter && $filter instanceof DateTimeFilter && $filter->isRequired();
+                $is_required_date_filter = $filter instanceof DateTimeFilter && $filter->isRequired();
                 if (!$search_field instanceof DatatableField)
                 {
                     $search_field = new DatatableField($search_field);
@@ -121,26 +121,6 @@ class DoctrineBuilder implements QueryInterface
                 }
             }
         }
-    }
-
-    private function getJoinAliasForEntityField(\Doctrine\ORM\QueryBuilder $queryBuilder, EntityDatatableField $field, int $index): string
-    {
-        $joined_field_alias = null;
-        foreach ($this->joins as $join)
-        {
-            if (strpos($join[0], $field->getField()) !== false)
-            {
-                $joined_field_alias = $join[1];
-                break;
-            }
-        }
-        if ($joined_field_alias === null)
-        {
-            $joined_field_alias = "cj{$index}";
-            $queryBuilder->leftJoin($field->getField(), $joined_field_alias, Join::LEFT_JOIN);
-        }
-
-        return $joined_field_alias;
     }
 
     public function addSearchForColumn(\Doctrine\ORM\QueryBuilder $queryBuilder, ?string $search_value, int $index, DatatableField $field, ?DatatableFilter $filter)
@@ -255,6 +235,26 @@ class DoctrineBuilder implements QueryInterface
                 $queryBuilder->setParameter("ssearch_end{$index}", $end);
                 break;
         }
+    }
+
+    private function getJoinAliasForEntityField(\Doctrine\ORM\QueryBuilder $queryBuilder, EntityDatatableField $field, int $index): string
+    {
+        $joined_field_alias = null;
+        foreach ($this->joins as $join)
+        {
+            if (strpos($join[0], $field->getField()) !== false)
+            {
+                $joined_field_alias = $join[1];
+                break;
+            }
+        }
+        if ($joined_field_alias === null)
+        {
+            $joined_field_alias = "cj{$index}";
+            $queryBuilder->leftJoin($field->getField(), $joined_field_alias, Join::LEFT_JOIN);
+        }
+
+        return $joined_field_alias;
     }
 
     /**
