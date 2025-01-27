@@ -18,6 +18,11 @@ use Ali\DatatableBundle\Util\Factory\Fields\DQLDatatableField;
 
 class DoctrineBuilder implements QueryInterface
 {
+    private const SEARCH_MODE_EQUALS = 'equals';
+    private const SEARCH_MODE_LIKE = 'like';
+    private const SEARCH_MODE_OR_LIKE = 'or_like';
+    private const SEARCH_MODE_IN = 'in';
+    private const SEARCH_MODE_BETWEEN = 'between';
 
     /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
     protected $container;
@@ -103,179 +108,153 @@ class DoctrineBuilder implements QueryInterface
             foreach ($search_fields as $i => $search_field)
             {
                 $search_param = $request->get("sSearch_{$i}");
-                $is_filter_field_with_equals = isset($filter_fields[$i]) && $filter_fields[$i]->getSearchType() == DatatableFilter::SEARCH_TYPE_EQUALS;
-                $equals_operator = $is_filter_field_with_equals ? '=' : 'like';
 
-                $is_required_date_filter = isset($filter_fields[$i]) && $filter_fields[$i] instanceof DateTimeFilter && $filter_fields[$i]->isRequired();
+                $filter = $filter_fields[$i] ?? null;
+                $is_required_date_filter = $filter instanceof DateTimeFilter && $filter->isRequired();
+                if (!$search_field instanceof DatatableField)
+                {
+                    $search_field = new DatatableField($search_field);
+                }
                 if ($search_param !== false && $search_param != '' || $is_required_date_filter)
                 {
-                    $field        = explode(' ', trim($search_field));
-                    $search_field = $field[0];
-
-                    /** @var DatatableField[] $original_field */
-                    $original_field = array_slice($this->fields, $i, 1);
-                    if (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DateTimeFilter)
-                    {
-                        $start = $filter_fields[$i]->getDefaultStart();
-                        $end = $filter_fields[$i]->getDefaultEnd();
-                        if ($search_param)
-                        {
-                            $parts = explode(" - ", $search_param);
-                            if (\count($parts) === 2)
-                            {
-                                $start = new \DateTime($parts[0]);
-                                $end = new \DateTime($parts[1]);
-                            }
-                        }
-
-                        if (false === $filter_fields[$i]->isFilterTime())
-                        {
-                            $start->setTime(0,0, 0);
-                            $end->setTime(23, 59, 59);
-                        }
-                        else
-                        {
-                            // make sure to get the full last minute
-                            $end->setTime($end->format('H'), $end->format('i'), 59);
-                        }
-
-                        if ($original_field !== null && is_array($original_field) && current($original_field) instanceof DQLDatatableField)
-                        {
-                            $field = current($original_field);
-                            $search_field = $field->getField();
-                        }
-
-                        $queryBuilder->andWhere("$search_field >= :ssearch_start{$i} AND $search_field <= :ssearch_end{$i}");
-                        $queryBuilder->setParameter("ssearch_start{$i}", $start);
-                        $queryBuilder->setParameter("ssearch_end{$i}", $end);
-
-                        continue;
-                    }
-                    elseif (isset($filter_fields[$i]) && $filter_fields[$i] instanceof MultiSelectFilter)
-                    {
-                        $search_field = $filter_fields[$i]->getSearchField();
-                        $parts = explode(',', $search_param);
-
-                        if (\count($parts) === 1)
-                        {
-                            $first_part = reset($parts);
-
-                            $queryBuilder->andWhere("$search_field = :ssearch{$i}");
-                            $queryBuilder->setParameter("ssearch{$i}", trim($first_part));
-                        }
-                        else
-                        {
-                            $search_values = [];
-                            foreach ($parts as $part)
-                            {
-                                $search_values[] = trim($part);
-                            }
-                            $parameter_name = "ssearch_values{$i}";
-                            $queryBuilder->andWhere("$search_field IN (:$parameter_name)");
-                            $queryBuilder->setParameter($parameter_name, $search_values);
-                        }
-
-                        continue;
-                    }
-                    elseif ($original_field !== null && is_array($original_field) && current($original_field) instanceof DQLDatatableField)
-                    {
-                        $original_field = current($original_field);
-                        $search_field = $original_field->getField();
-                        if ($original_field->getNeedsHaving()) {
-                            $queryBuilder->andHaving(" $search_field $equals_operator :ssearch{$i} ");
-                        } else {
-                            $search_field = $original_field->getField();
-                            $queryBuilder->andWhere(" $search_field $equals_operator :ssearch{$i} ");
-                        }
-                    }
-                    elseif (
-                        $original_field !== null &&
-                        is_array($original_field) &&
-                        reset($original_field) instanceof EntityDatatableField &&
-                        reset($original_field)->getEntityFields() != null &&
-                        (
-                            !isset($filter_fields[$i]) ||
-                            (isset($filter_fields[$i]) && !($filter_fields[$i] instanceof DatatableFilter)) ||
-                            ((isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter && $filter_fields[$i]->getSearchField() === null))
-                        )
-                    )
-                    {
-                        // 1. get the entity fields
-                        $entity_search_fields = reset($original_field)->getEntityFields();
-
-                        // 2. join if needed
-                        $joined_field_alias = null;
-                        foreach ($this->joins as $join)
-                        {
-                            if (strpos($join[0], $search_field) !== FALSE)
-                            {
-                                $joined_field_alias = $join[1];
-                                break;
-                            }
-                        }
-                        if ($joined_field_alias === null)
-                        {
-                            $joined_field_alias = 'cj'.$i;
-                            $queryBuilder->leftJoin($search_field, $joined_field_alias, Join::LEFT_JOIN);
-                        }
-
-                        //3. check if we received an array with search fields
-                        if(!is_array($entity_search_fields))
-                        {
-                            throw new \Exception('Expected an array with fields as answer from the "EntityDatatableField->getEntityFields()" method which you passed in the constructor or in the setter.');
-                        }
-
-                        //4. build the where part of the query (WHERE field LIKE entity_search_field[0] OR WHERE field LIKE entity_search_field[1] OR.....)
-                        $first_field = true;
-                        $query = '';
-                        foreach ($entity_search_fields as $key => $entity_search_field)
-                        {
-                            if ($first_field === false)
-                            {
-                                $query .= 'OR';
-                            }
-                            $query .= " $joined_field_alias.$entity_search_field $equals_operator :ssearch{$i} ";
-                            $first_field = false;
-                        }
-                        $queryBuilder->andWhere($query);
-                    }
-                    elseif (isset($filter_fields[$i]) && $filter_fields[$i] instanceof DatatableFilter)
-                    {
-                        $actual_search_field = $filter_fields[$i]->getSearchField() ?: $search_field;
-                        $parts = explode(',', $search_param);
-                        if ($filter_fields[$i]->getMultiSelectEnabled() && \count($parts) > 1)
-                        {
-                            $search_values = [];
-                            foreach ($parts as $part)
-                            {
-                                $search_values[] = trim($part);
-                            }
-                            $parameter_name = "ssearch_values{$i}";
-                            $queryBuilder->andWhere("$actual_search_field IN (:$parameter_name)");
-                            $queryBuilder->setParameter($parameter_name, $search_values);
-                        }
-                        elseif ($filter_fields[$i]->getSearchType() === DatatableFilter::SEARCH_TYPE_LIKE)
-                        {
-                            $queryBuilder->andWhere("$actual_search_field like :ssearch{$i}");
-                            $queryBuilder->setParameter("ssearch{$i}", sprintf('%%%s%%', trim($search_param)));
-                        }
-                        else
-                        {
-                            $queryBuilder->andWhere("$actual_search_field = :ssearch{$i}");
-                            $queryBuilder->setParameter("ssearch{$i}", trim($search_param));
-                        }
-
-                        continue;
-                    }
-                    else
-                    {
-                        $queryBuilder->andWhere(" $search_field $equals_operator :ssearch{$i} ");
-                    }
-
-                    $queryBuilder->setParameter("ssearch{$i}", $equals_operator == '=' ? $request->get("sSearch_{$i}") : '%' . $request->get("sSearch_{$i}") . '%');
+                    $this->addSearchForColumn($queryBuilder, $search_param, $i, $search_field, $filter);
                 }
             }
         }
+    }
+
+    public function addSearchForColumn(\Doctrine\ORM\QueryBuilder $queryBuilder, ?string $search_value, int $index, DatatableField $field, ?DatatableFilter $filter)
+    {
+        $search_field = $field->getField();
+        $search_mode = self::SEARCH_MODE_LIKE;
+        $search_type = 'andWhere';
+        if ($field instanceof DQLDatatableField && $field->getNeedsHaving())
+        {
+            $search_type = 'andHaving';
+        }
+        $entity_field_alias = null;
+        if ($field instanceof EntityDatatableField)
+        {
+            if ($filter === null)
+            {
+                $search_mode = self::SEARCH_MODE_OR_LIKE;
+            }
+            $entity_field_alias = $this->getJoinAliasForEntityField($queryBuilder, $field, $index);
+            if (\count($field->getEntityFields()) === 1)
+            {
+                $search_field = "{$entity_field_alias}.{$field->getEntityFields()[0]}";
+            }
+            else if ($filter)
+            {
+                throw new \Exception("It's unsupported to have multiple entity fields with a filter defined.");
+            }
+        }
+        if ($filter !== null)
+        {
+            $search_field = $filter->getSearchField() ?? $search_field;
+            if ($filter instanceof DateTimeFilter)
+            {
+                $search_mode = self::SEARCH_MODE_BETWEEN;
+            }
+            else if ($filter instanceof MultiSelectFilter && $filter->getSearchField() !== null)
+            {
+                $search_mode = self::SEARCH_MODE_IN;
+            }
+            else if ($filter->getMultiSelectEnabled())
+            {
+                $search_mode = !empty($search_value) && strpos($search_value, ',') !== false ? self::SEARCH_MODE_IN : self::SEARCH_MODE_EQUALS;
+            }
+            else if ($filter->getSearchType() == DatatableFilter::SEARCH_TYPE_EQUALS)
+            {
+                $search_mode = self::SEARCH_MODE_EQUALS;
+            }
+        }
+
+        switch ($search_mode)
+        {
+            case self::SEARCH_MODE_LIKE:
+                $queryBuilder->{$search_type}(" $search_field LIKE :ssearch{$index} ");
+                $queryBuilder->setParameter("ssearch{$index}", "%{$search_value}%");
+                break;
+            case self::SEARCH_MODE_EQUALS:
+                $queryBuilder->{$search_type}(" $search_field = :ssearch{$index} ");
+                $queryBuilder->setParameter("ssearch{$index}", $search_value);
+                break;
+            case self::SEARCH_MODE_OR_LIKE:
+                $or_statements = [];
+                foreach ($field->getEntityFields() as $entity_search_field)
+                {
+                    $or_statements[] = "$entity_field_alias.$entity_search_field LIKE :ssearch{$index}";
+                }
+                $queryBuilder->{$search_type}(implode(' OR ', $or_statements));
+                $queryBuilder->setParameter("ssearch{$index}", "%{$search_value}%");
+                break;
+            case self::SEARCH_MODE_IN:
+                $parts = explode(',', $search_value);
+                $search_values = [];
+                foreach ($parts as $part)
+                {
+                    $search_values[] = trim($part);
+                }
+                $parameter_name = "ssearch_values{$index}";
+                $queryBuilder->{$search_type}("$search_field IN (:$parameter_name)");
+                $queryBuilder->setParameter($parameter_name, $search_values);
+                break;
+            case self::SEARCH_MODE_BETWEEN:
+                $start = $filter->getDefaultStart();
+                $end = $filter->getDefaultEnd();
+                if ($search_value)
+                {
+                    $parts = explode(" - ", $search_value);
+                    if (\count($parts) === 2)
+                    {
+                        $start = new \DateTime($parts[0]);
+                        $end = new \DateTime($parts[1]);
+                    }
+                }
+
+                if (false === $filter->isFilterTime())
+                {
+                    $start->setTime(0,0, 0);
+                    $end->setTime(23, 59, 59);
+                }
+                else
+                {
+                    // make sure to get the full last minute
+                    $end->setTime($end->format('H'), $end->format('i'), 59);
+                }
+
+                if ($field !== null && is_array($field) && current($field) instanceof DQLDatatableField)
+                {
+                    $field = current($field);
+                    $search_field = $field->getField();
+                }
+
+                $queryBuilder->{$search_type}("$search_field >= :ssearch_start{$index} AND $search_field <= :ssearch_end{$index}");
+                $queryBuilder->setParameter("ssearch_start{$index}", $start);
+                $queryBuilder->setParameter("ssearch_end{$index}", $end);
+                break;
+        }
+    }
+
+    private function getJoinAliasForEntityField(\Doctrine\ORM\QueryBuilder $queryBuilder, EntityDatatableField $field, int $index): string
+    {
+        $joined_field_alias = null;
+        foreach ($this->joins as $join)
+        {
+            if (strpos($join[0], $field->getField()) !== false)
+            {
+                $joined_field_alias = $join[1];
+                break;
+            }
+        }
+        if ($joined_field_alias === null)
+        {
+            $joined_field_alias = "cj{$index}";
+            $queryBuilder->leftJoin($field->getField(), $joined_field_alias, Join::LEFT_JOIN);
+        }
+
+        return $joined_field_alias;
     }
 
     /**
