@@ -68,7 +68,7 @@ class DatatableListener implements EventSubscriberInterface
             return;
         }
         $session       = $request->getSession();
-        $dom           = '<script id="alidatatable-scripts" type="text/javascript">';
+        $dom           = '<script id="alidatatable-scripts" type="text/javascript" nonce="CQp8HV9whIqW2xhqCXCJNWj0K1DvzmFC">';
         $pos_container = strripos($content, 'alidatatable-scripts');
         $sess_dta      = $session->get('datatable', []);
         $dta_script    = null;
