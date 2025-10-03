@@ -144,7 +144,7 @@ class DoctrineBuilder implements QueryInterface
             {
                 $search_field = "{$entity_field_alias}.{$field->getEntityFields()[0]}";
             }
-            else if ($filter && !($filter instanceof MultiSelectFilter))
+            else if ($filter && !($filter instanceof MultiSelectFilter) && $filter->getSearchField() === null)
             {
                 throw new \Exception("It's unsupported to have multiple entity fields with a filter defined.");
             }
