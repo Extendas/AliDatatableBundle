@@ -2,14 +2,10 @@
 
 namespace Ali\DatatableBundle\Util\Formatter;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Twig\Environment;
 
 class Renderer
 {
-
-    /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
-    protected $_container;
-
     /** @var array */
     protected $_renderers = NULL;
 
@@ -18,17 +14,11 @@ class Renderer
 
     /** @var int */
     protected $_identifier_index = NULL;
+    private Environment $twig;
 
-    /**
-     * class constructor
-     * 
-     * @param ContainerInterface $container
-     * @param array $renderers 
-     * @param array $fields 
-     */
-    public function __construct(ContainerInterface $container, array $renderers, array $fields)
+    public function __construct(Environment $twig, array $renderers, array $fields)
     {
-        $this->_container = $container;
+        $this->twig = $twig;
         $this->_renderers = $renderers;
         $this->_fields    = $fields;
         $this->_prepare();
@@ -44,8 +34,7 @@ class Renderer
      */
     public function applyView($view_path, array $params)
     {
-        $out = $this->_container
-                ->get('twig')
+        $out = $this->twig
                 ->render($view_path, $params);
         return html_entity_decode($out);
     }

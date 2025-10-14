@@ -39,7 +39,7 @@ class DatatableListener implements EventSubscriberInterface
     {
         $response = $event->getResponse();
         $request  = $event->getRequest();
-        if (!$event->isMasterRequest())
+        if (!$event->isMainRequest())
         {
             return;
         }

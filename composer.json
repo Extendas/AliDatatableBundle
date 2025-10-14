@@ -15,10 +15,13 @@
     "require": {
         "php": "~7.4|~8.0",
         "twig/twig": ">=2.9",
-        "doctrine/orm": "~2.3",
+        "doctrine/orm": ">=2.3",
         "doctrine/dbal": ">=2.13",
         "doctrine/doctrine-bundle": "~1.0|~2.0",
-        "ggergo/sqlindexhintbundle": "^1.0"
+        "ggergo/sqlindexhintbundle": "^1.0",
+        "symfony/framework-bundle": "^5.4|^6.4",
+        "symfony/form": "^5.4|^6.4",
+        "symfony/translation": "^5.4|^6.4"
     },
     "target-dir": "Ali/DatatableBundle",
     "autoload": {

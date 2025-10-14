@@ -4,13 +4,13 @@ parameters:
 services:
     datatable:
         class: "%datatable.class%"
-        arguments: ['@service_container']
+        arguments: ['@parameter_bag', '@form.factory', '@twig.form.renderer', '@twig']
         calls:
             - [setEntityManager, ['@doctrine.orm.entity_manager']]
             
     datatable.twig.extension:
         class: Ali\DatatableBundle\Twig\Extension\AliDatatableExtension
-        arguments: ['@service_container']
+        arguments: ['@form.factory', '@twig', '@request_stack', '@translator.default', '@kernel']
         tags:
             -  { name: twig.extension }
 

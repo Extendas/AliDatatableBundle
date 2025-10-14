@@ -2,8 +2,9 @@
 
 namespace Ali\DatatableBundle\Util;
 
-use Ali\DatatableBundle\Util\Factory\Fields\DatatableField;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormRendererInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\Query;
@@ -13,6 +14,7 @@ use Ali\DatatableBundle\Util\Factory\Query\QueryInterface;
 use Ali\DatatableBundle\Util\Factory\Query\DoctrineBuilder;
 use Ali\DatatableBundle\Util\Formatter\Renderer;
 use Ali\DatatableBundle\Util\Factory\Prototype\PrototypeBuilder;
+use Twig\Environment;
 
 class Datatable
 {
@@ -22,9 +24,6 @@ class Datatable
 
     /** @var array */
     protected $_config;
-
-    /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
-    protected $_container;
 
     /** @var boolean */
     protected $_has_action;
@@ -65,15 +64,16 @@ class Datatable
     /** @var Datatable */
     protected static $_current_instance = NULL;
 
-    /**
-     * class constructor 
-     * 
-     * @param ContainerInterface $container 
-     */
-    public function __construct(ContainerInterface $container)
+    private FormFactoryInterface $form_factory;
+    private Environment $twig;
+    private FormRendererInterface $form_renderer;
+
+    public function __construct(ParameterBagInterface $parameter_bag, FormFactoryInterface $form_factory, FormRendererInterface $form_renderer, Environment $twig)
     {
-        $this->_container        = $container;
-        $this->_config           = $this->_container->getParameter('ali_datatable');
+        $this->form_factory = $form_factory;
+        $this->form_renderer = $form_renderer;
+        $this->twig = $twig;
+        $this->_config           = $parameter_bag->get('ali_datatable');
         $this->_request          = Request::createFromGlobals();
         self::$_current_instance = $this;
         $this->_applyDefaults();
@@ -153,7 +153,7 @@ class Datatable
     {
         $request       = $this->_request;
         $total_count = $this->_queryBuilder->getTotalRecords($this->getFilterFields());
-        list($data, $objects) = $this->_queryBuilder->getData($this->getFilterFields());
+        [$data, $objects] = $this->_queryBuilder->getData($this->getFilterFields());
 
         $id_index      = array_search('_identifier_', array_keys($this->getFields()));
         $ids           = array();
@@ -305,7 +305,7 @@ class Datatable
      */
     public function getPrototype($type)
     {
-        return new PrototypeBuilder($this->_container, $type);
+        return new PrototypeBuilder($this->form_factory, $this->form_renderer, $type);
     }
 
     /**
@@ -356,7 +356,7 @@ class Datatable
      */
     public function setEntityManager(EntityManager $em)
     {
-        $this->_queryBuilder = new DoctrineBuilder($this->_container, $em);
+        $this->_queryBuilder = new DoctrineBuilder($em);
         return $this;
     }
 
@@ -526,7 +526,7 @@ class Datatable
         $this->_renderers = $renderers;
         if (!empty($this->_renderers))
         {
-            $this->_renderer_obj = new Renderer($this->_container, $this->_renderers, $this->getFields());
+            $this->_renderer_obj = new Renderer($this->twig, $this->_renderers, $this->getFields());
         }
         $actions_index = array_search('_identifier_', array_keys($this->getFields()));
         if ($actions_index != FALSE && isset($renderers[$actions_index]))

@@ -12,7 +12,6 @@ use Ali\DatatableBundle\Util\Factory\Filter\MultiSelectFilter;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
 use Ggergo\SqlIndexHintBundle\SqlIndexWalker;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Ali\DatatableBundle\Util\Factory\Fields\DQLDatatableField;
 
@@ -23,9 +22,6 @@ class DoctrineBuilder implements QueryInterface
     private const SEARCH_MODE_OR_LIKE = 'or_like';
     private const SEARCH_MODE_IN = 'in';
     private const SEARCH_MODE_BETWEEN = 'between';
-
-    /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
-    protected $container;
 
     /** @var \Doctrine\ORM\EntityManager */
     protected $em;
@@ -78,14 +74,8 @@ class DoctrineBuilder implements QueryInterface
     /** @var string|null */
     private $_lowest_entity_field_id;
 
-    /**
-     * class constructor
-     *
-     * @param ContainerInterface $container
-     */
-    public function __construct(ContainerInterface $container, $em)
+    public function __construct($em)
     {
-        $this->container    = $container;
         $this->em           = $em;
         $this->request      = Request::createFromGlobals();
         $this->queryBuilder = $this->em->createQueryBuilder();
