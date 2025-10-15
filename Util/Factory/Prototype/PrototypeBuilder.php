@@ -46,16 +46,9 @@ class PrototypeBuilder
     protected function _delete_form()
     {
 
-        if (version_compare(phpversion(), '5.5', '<')) {
-            $form = $this->form_factory->createBuilder('form', array('id' => '@id'), array())
-                        ->add('id', 'hidden')
-                        ->getForm();
-        }
-        else {
-            $form = $this->form_factory->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', array('id' => '@id'), array())
-                        ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
-                        ->getForm();
-        }
+        $form = $this->form_factory->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', array('id' => '@id'), array())
+                ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
+                ->getForm();
 
         return $this->form_renderer->searchAndRenderBlock($form->createView(), 'widget');
     }

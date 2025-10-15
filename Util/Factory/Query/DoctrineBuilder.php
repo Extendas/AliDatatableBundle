@@ -9,6 +9,7 @@ use Ali\DatatableBundle\Util\Factory\Fields\EntityDatatableField;
 use Ali\DatatableBundle\Util\Factory\Filter\DatatableFilter;
 use Ali\DatatableBundle\Util\Factory\Filter\DateTimeFilter;
 use Ali\DatatableBundle\Util\Factory\Filter\MultiSelectFilter;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
 use Ggergo\SqlIndexHintBundle\SqlIndexWalker;
@@ -74,7 +75,7 @@ class DoctrineBuilder implements QueryInterface
     /** @var string|null */
     private $_lowest_entity_field_id;
 
-    public function __construct($em)
+    public function __construct(EntityManagerInterface $em)
     {
         $this->em           = $em;
         $this->request      = Request::createFromGlobals();
