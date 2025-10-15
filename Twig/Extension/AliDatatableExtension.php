@@ -35,7 +35,7 @@ class AliDatatableExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getFunctions()
+    public function getFunctions(): array
     {
         return [
             new TwigFunction('datatable', [$this, 'datatable'], ["is_safe" => ["html"]])
@@ -45,7 +45,7 @@ class AliDatatableExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getFilters()
+    public function getFilters(): array
     {
         return [
             new TwigFilter('dta_trans', [$this, 'dtatransFilter'])

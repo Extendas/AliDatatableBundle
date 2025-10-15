@@ -2,6 +2,7 @@
 
 namespace Ali\DatatableBundle\DependencyInjection;
 
+use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
@@ -30,7 +31,7 @@ class AliDatatableExtension extends Extension
     /**
      * {@inheritDoc}
      */
-    public function getXsdValidationBasePath()
+    public function getXsdValidationBasePath(): false|string
     {
         return __DIR__ . '/../Resources/config/schema';
     }
@@ -38,7 +39,7 @@ class AliDatatableExtension extends Extension
     /**
      * {@inheritDoc}
      */
-    public function getNamespace()
+    public function getNamespace(): string
     {
         return 'http://symfony.com/schema/dic/doctrine';
     }
@@ -46,7 +47,7 @@ class AliDatatableExtension extends Extension
     /**
      * {@inheritDoc}
      */
-    public function getConfiguration(array $config, ContainerBuilder $container)
+    public function getConfiguration(array $config, ContainerBuilder $container): ?ConfigurationInterface
     {
         return new Configuration($container->getParameter('kernel.debug'));
     }
