@@ -137,12 +137,13 @@ class Datatable
      *
      * @return \Ali\DatatableBundle\Util\Datatable
      */
-    public function addJoinWithForcedIndex($join_field, $alias, $type = Join::INNER_JOIN, $cond = '', ?string $force_index = null, ?string $force_index_table_name = null)
+    public function addJoinWithForcedIndex($join_field, $alias, $type = Join::INNER_JOIN, $cond = '', ?string $force_index = null, ?string $force_index_class = null)
     {
         $this->addJoin($join_field, $alias, $type, $cond);
         if ($force_index !== null)
         {
-            $this->getQueryBuilder()->addForcedIndex($force_index_table_name, $force_index);
+            $table_name = $this->entity_manager->getClassMetadata($force_index_class)->getTableName();
+            $this->getQueryBuilder()->addForcedIndex($table_name, $force_index);
         }
         return $this;
     }
