@@ -12,7 +12,9 @@ use Ali\DatatableBundle\Util\Factory\Filter\MultiSelectFilter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
-use Ggergo\SqlIndexHintBundle\SqlIndexWalker;
+use ShipMonk\Doctrine\MySql\IndexHint;
+use ShipMonk\Doctrine\MySql\UseIndexHintHandler;
+use ShipMonk\Doctrine\Walker\HintDrivenSqlWalker;
 use Symfony\Component\HttpFoundation\Request;
 use Ali\DatatableBundle\Util\Factory\Fields\DQLDatatableField;
 
@@ -69,8 +71,8 @@ class DoctrineBuilder implements QueryInterface
     /** @var array */
     protected $query_hints;
 
-    /** @var array */
-    protected $forced_indexes;
+    /** @var IndexHint[] */
+    protected array $forced_indexes = [];
 
     /** @var string|null */
     private $_lowest_entity_field_id;
@@ -895,8 +897,8 @@ class DoctrineBuilder implements QueryInterface
             return;
         }
 
-        $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, SqlIndexWalker::class);
-        $query->setHint(SqlIndexWalker::HINT_INDEX, $this->forced_indexes);
+        $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, HintDrivenSqlWalker::class);
+        $query->setHint(UseIndexHintHandler::class, $this->forced_indexes);
     }
 
     /**
@@ -921,12 +923,8 @@ class DoctrineBuilder implements QueryInterface
         $this->queryBuilder->setParameter($key, $value);
     }
 
-    /**
-     * @param $alias
-     * @param $force_index
-     */
-    function addForcedIndex($alias, $force_index)
+    function addForcedIndex(string $table_name, string $index_name): void
     {
-        $this->forced_indexes[$alias] = sprintf('FORCE INDEX (%s)', $force_index);
+        $this->forced_indexes[] = IndexHint::force($index_name, $table_name);
     }
 }

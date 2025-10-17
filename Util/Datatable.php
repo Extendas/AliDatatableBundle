@@ -68,11 +68,13 @@ class Datatable
     private FormFactoryInterface $form_factory;
     private Environment $twig;
     private FormRendererInterface $form_renderer;
+    private EntityManagerInterface $entity_manager;
 
-    public function __construct(ParameterBagInterface $parameter_bag, FormFactoryInterface $form_factory, FormRendererInterface $form_renderer, Environment $twig)
+    public function __construct(ParameterBagInterface $parameter_bag, FormFactoryInterface $form_factory, FormRendererInterface $form_renderer, Environment $twig, EntityManagerInterface $entity_manager)
     {
         $this->form_factory         = $form_factory;
         $this->form_renderer        = $form_renderer;
+        $this->entity_manager       = $entity_manager;
         $this->twig                 = $twig;
         $this->_config              = $parameter_bag->get('ali_datatable');
         $this->_request             = Request::createFromGlobals();
@@ -135,12 +137,12 @@ class Datatable
      *
      * @return \Ali\DatatableBundle\Util\Datatable
      */
-    public function addJoinWithForcedIndex($join_field, $alias, $type = Join::INNER_JOIN, $cond = '', $force_index = null)
+    public function addJoinWithForcedIndex($join_field, $alias, $type = Join::INNER_JOIN, $cond = '', ?string $force_index = null, ?string $force_index_table_name = null)
     {
         $this->addJoin($join_field, $alias, $type, $cond);
         if ($force_index !== null)
         {
-            $this->getQueryBuilder()->addForcedIndex($alias, $force_index);
+            $this->getQueryBuilder()->addForcedIndex($force_index_table_name, $force_index);
         }
         return $this;
     }
@@ -343,7 +345,8 @@ class Datatable
         $this->_queryBuilder->setEntity($entity_name, $entity_alias);
         if ($forced_index !== null)
         {
-            $this->getQueryBuilder()->addForcedIndex($entity_alias, $forced_index);
+            $table_name = $this->entity_manager->getClassMetadata($entity_name)->getTableName();
+            $this->getQueryBuilder()->addForcedIndex($table_name, $forced_index);
         }
         return $this;
     }

@@ -4,7 +4,7 @@ parameters:
 services:
     datatable:
         class: "%datatable.class%"
-        arguments: ['@parameter_bag', '@form.factory', '@twig.form.renderer', '@twig']
+        arguments: ['@parameter_bag', '@form.factory', '@twig.form.renderer', '@twig', '@doctrine.orm.entity_manager']
         calls:
             - [setEntityManager, ['@doctrine.orm.entity_manager']]
             
