@@ -2,28 +2,19 @@
 
 namespace Ali\DatatableBundle\Util\Factory\Prototype;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Form\Extension\Core\Type\FormType;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormRendererInterface;
 
 class PrototypeBuilder
 {
-
-    /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
-    protected $container;
-    
     /** @var string */
     protected $_prototype;
+    private FormFactoryInterface $form_factory;
+    private FormRendererInterface $form_renderer;
 
-    /**
-     * class constructor
-     * 
-     * @param ContainerInterface $container
-     * @param string             $type 
-     */
-    public function __construct(ContainerInterface $container, $type)
+    public function __construct(FormFactoryInterface $form_factory, FormRendererInterface $form_renderer, $type)
     {
-        $this->container = $container;
+        $this->form_factory = $form_factory;
         $method = "_{$type}";
         $rc = new \ReflectionClass(__CLASS__);
         if ($rc->hasMethod($method))
@@ -34,6 +25,7 @@ class PrototypeBuilder
         {
             throw new \Exception(sprintf('prototype "%s" not found', $type));
         }
+        $this->form_renderer = $form_renderer;
     }
     
     /**
@@ -54,26 +46,11 @@ class PrototypeBuilder
     protected function _delete_form()
     {
 
-        if (version_compare(phpversion(), '5.5', '<')) {
-            return $this->container
-                ->get('templating.helper.form')
-                ->widget(
-                    $this->container->get('form.factory')->createBuilder('form', array('id' => '@id'), array())
-                        ->add('id', 'hidden')
-                        ->getForm()
-                        ->createView()
-                );
-        }
-        else {
-            return $this->container
-                ->get('templating.helper.form')
-                ->widget(
-                    $this->container->get('form.factory')->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', array('id' => '@id'), array())
-                        ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
-                        ->getForm()
-                        ->createView()
-                );
-        }
+        $form = $this->form_factory->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', array('id' => '@id'), array())
+                ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
+                ->getForm();
+
+        return $this->form_renderer->searchAndRenderBlock($form->createView(), 'widget');
     }
 
 }

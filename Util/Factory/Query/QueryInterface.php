@@ -168,5 +168,5 @@ interface QueryInterface
      */
     function AddQueryHint($hint, $value);
 
-    function addForcedIndex($alias, $force_index);
+    function addForcedIndex(string $table_name, string $index_name);
 }

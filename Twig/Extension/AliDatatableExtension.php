@@ -6,41 +6,50 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Ali\DatatableBundle\Util\Datatable;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
+use Twig\Environment;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
+use Twig\TwigFunction;
 
-class AliDatatableExtension extends \Twig_Extension
+class AliDatatableExtension extends AbstractExtension
 {
+    private FormFactoryInterface $form_factory;
+    private Environment $twig;
+    private RequestStack $request_stack;
+    private TranslatorInterface $translator;
+    private KernelInterface $kernel;
 
-    /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
-    protected $_container;
-
-    /**
-     * class constructor 
-     * 
-     * @param ContainerInterface $container 
-     */
-    public function __construct(ContainerInterface $container)
+    public function __construct(FormFactoryInterface $form_factory, Environment $twig, RequestStack $request_stack, TranslatorInterface $translator, KernelInterface $kernel)
     {
-        $this->_container = $container;
+        $this->form_factory = $form_factory;
+        $this->twig = $twig;
+        $this->request_stack = $request_stack;
+        $this->translator = $translator;
+        $this->kernel = $kernel;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getFunctions()
+    public function getFunctions(): array
     {
-        return array(
-            new \Twig_SimpleFunction('datatable', array($this, 'datatable'), array("is_safe" => array("html")))
-        );
+        return [
+            new TwigFunction('datatable', [$this, 'datatable'], ["is_safe" => ["html"]])
+        ];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getFilters()
+    public function getFilters(): array
     {
-        return array(
-            new \Twig_SimpleFilter('dta_trans', array($this, 'dtatransFilter'))
-        );
+        return [
+            new TwigFilter('dta_trans', [$this, 'dtatransFilter'])
+        ];
     }
 
     /**
@@ -52,9 +61,9 @@ class AliDatatableExtension extends \Twig_Extension
      */
     public function dtatransFilter($id)
     {
-        $translator = $this->_container->get('translator');
+        $translator = $this->translator;
         $callback   = function($id) {
-            $path = $this->_container->get('kernel')->locateResource('@AliDatatableBundle/Resources/translations/messages.en.yml');
+            $path = $this->kernel->locateResource('@AliDatatableBundle/Resources/translations/messages.en.yml');
             return \Symfony\Component\Yaml\Yaml::parse(file_get_contents($path))['ali']['common'][explode('.', $id)[2]];
         };
         return $translator->trans($id) === $id ? $callback($id) : $translator->trans($id);
@@ -91,54 +100,25 @@ class AliDatatableExtension extends \Twig_Extension
         {
             $main_template = $options['main_template'];
         }
-        $session                  = $this->_container->get('session');
-        $rawjs                    = $this->_container
-                ->get('twig')
-                ->render('@AliDatatable/Internal/script.html.twig', $options);
+        $session                  = $this->request_stack->getSession();
+        $rawjs                    = $this->twig->render('@AliDatatable/Internal/script.html.twig', $options);
         $sess_dtb                 = $session->get('datatable', array());
         $sess_dtb[$options['id']] = $rawjs;
         $session->set('datatable', $sess_dtb);
 
-        return $this->_container
-                        ->get('twig')
-                        ->render($main_template, $options);
+        return $this->twig->render($main_template, $options);
     }
 
-    /**
-     * create delete form
-     * 
-     * @param type $id
-     * @return type 
-     */
     private function createDeleteForm($id)
     {
-        if (version_compare(phpversion(), '5.5', '<')) {
-            return $this->createFormBuilder(array('id' => $id))
-                ->add('id', 'hidden')
-                ->getForm();
-        }
-        else {
-            return $this->createFormBuilder(array('id' => $id))
-                ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
-                ->getForm();
-        }
+        return $this->createFormBuilder(['id' => $id])
+            ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
+            ->getForm();
     }
 
-    /**
-     * create form builder
-     * 
-     * @param type $data
-     * @param array $options
-     * @return type 
-     */
     public function createFormBuilder($data = null, array $options = array())
     {
-        if (version_compare(phpversion(), '5.5', '<')) {
-            return $this->_container->get('form.factory')->createBuilder('form', $data, $options);
-        }
-        else {
-            return $this->_container->get('form.factory')->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', $data, $options);
-        }
+        return $this->form_factory->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', $data, $options);
     }
 
     /**
