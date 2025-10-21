@@ -111,26 +111,14 @@ class AliDatatableExtension extends AbstractExtension
 
     private function createDeleteForm($id)
     {
-        if (version_compare(phpversion(), '5.5', '<')) {
-            return $this->createFormBuilder(array('id' => $id))
-                ->add('id', 'hidden')
-                ->getForm();
-        }
-        else {
-            return $this->createFormBuilder(array('id' => $id))
-                ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
-                ->getForm();
-        }
+        return $this->createFormBuilder(['id' => $id])
+            ->add('id', 'Symfony\Component\Form\Extension\Core\Type\HiddenType')
+            ->getForm();
     }
 
     public function createFormBuilder($data = null, array $options = array())
     {
-        if (version_compare(phpversion(), '5.5', '<')) {
-            return $this->form_factory->createBuilder('form', $data, $options);
-        }
-        else {
-            return $this->form_factory->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', $data, $options);
-        }
+        return $this->form_factory->createBuilder('Symfony\Component\Form\Extension\Core\Type\FormType', $data, $options);
     }
 
     /**
