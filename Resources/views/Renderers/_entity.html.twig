@@ -1,4 +1,4 @@
-{% spaceless %}
+{% apply spaceless %}
     {% if entity is not defined %}
         missing parameters for rendering entity ({% if entity is not defined %}entity{% endif %})
     {% else %}
@@ -17,4 +17,4 @@
             {% endembed %}
         {% endif %}
     {% endif %}
-{% endspaceless %}
+{% endapply %}

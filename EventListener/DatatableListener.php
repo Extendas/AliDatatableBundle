@@ -14,7 +14,7 @@ namespace Ali\DatatableBundle\EventListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Flash\AutoExpireFlashBag;
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -32,10 +32,10 @@ class DatatableListener implements EventSubscriberInterface
     /**
      * On kernel response event
      * 
-     * @param FilterResponseEvent $event
+     * @param ResponseEvent $event
      * @return void|null
      */
-    public function onKernelResponse(FilterResponseEvent $event)
+    public function onKernelResponse(ResponseEvent $event)
     {
         $response = $event->getResponse();
         $request  = $event->getRequest();
@@ -58,24 +58,28 @@ class DatatableListener implements EventSubscriberInterface
     protected function _injectDatatableScript(Response $response, Request $request)
     {
         $content  = $response->getContent();
+        if (!is_string($content))
+        {
+            return;
+        }
         $pos_body = strripos($content, '</body>');
         if (!$pos_body)
         {
             return;
         }
         $session       = $request->getSession();
-        $dom           = '<script id="alidatatable-scripts" type="text/javascript">';
+        $dom           = '<script id="alidatatable-scripts" type="text/javascript" nonce="CQp8HV9whIqW2xhqCXCJNWj0K1DvzmFC">';
         $pos_container = strripos($content, 'alidatatable-scripts');
-        $sess_dta      = $session->get('datatable',array());
+        $sess_dta      = $session->get('datatable', []);
         $dta_script    = null;
         if ($sess_dta)
         {
-            array_walk($sess_dta, function(&$part, &$key) {
-                $part = trim(preg_replace('/\s\s+/', ' ', $part));
+            array_walk($sess_dta, function($part, $key) use (&$sess_dta) {
+                $sess_dta[$key] = trim(preg_replace('/\s\s+/', ' ', $part));
             });
             $dta_script = implode("\n", $sess_dta);
         }
-        $session->set('datatable', array());
+        $session->set('datatable', []);
         if (!$pos_container)
         {
             $dta_container = $dom;
@@ -83,7 +87,10 @@ class DatatableListener implements EventSubscriberInterface
             $response->setContent($content);
         }
         $pos_dta = strripos($content, $dom);
-        $content = substr_replace($content, $dta_script, $pos_dta + strlen($dom), 0);
+        if ($dta_script)
+        {
+            $content = substr_replace($content, $dta_script, $pos_dta + strlen($dom), 0);
+        }
         $response->setContent($content);
     }
 
