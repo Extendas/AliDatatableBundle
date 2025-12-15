@@ -8,7 +8,10 @@
 
 namespace Ali\DatatableBundle\Twig\Extension;
 
-class TwigGetClassNameExtension extends \Twig_Extension
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
+
+class TwigGetClassNameExtension extends AbstractExtension
 {
     /**
      * @return array
@@ -16,7 +19,7 @@ class TwigGetClassNameExtension extends \Twig_Extension
     public function getFilters()
     {
         return array(
-            new \Twig_SimpleFilter('get_class_name', array($this, 'getClassNameFilter')),
+            new TwigFilter('get_class_name', array($this, 'getClassNameFilter')),
         );
     }
 
