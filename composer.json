@@ -14,7 +14,7 @@
     ],
     "require": {
         "php": "~7.4|~8.0",
-        "twig/twig": ">=2.9",
+        "twig/twig": "^3.0",
         "doctrine/orm": "~2.3",
         "doctrine/dbal": ">=2.13",
         "doctrine/doctrine-bundle": "~1.0|~2.0",
