@@ -3,11 +3,12 @@
 namespace Ali\DatatableBundle\Twig\Extension;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Form\Extension\Core\Type\FormType;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Ali\DatatableBundle\Util\Datatable;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
+use Twig\TwigFunction;
 
-class AliDatatableExtension extends \Twig_Extension
+class AliDatatableExtension extends AbstractExtension
 {
 
     /** @var \Symfony\Component\DependencyInjection\ContainerInterface */
@@ -29,7 +30,7 @@ class AliDatatableExtension extends \Twig_Extension
     public function getFunctions()
     {
         return array(
-            new \Twig_SimpleFunction('datatable', array($this, 'datatable'), array("is_safe" => array("html")))
+            new TwigFunction('datatable', array($this, 'datatable'), array("is_safe" => array("html")))
         );
     }
 
@@ -39,7 +40,7 @@ class AliDatatableExtension extends \Twig_Extension
     public function getFilters()
     {
         return array(
-            new \Twig_SimpleFilter('dta_trans', array($this, 'dtatransFilter'))
+            new TwigFilter('dta_trans', array($this, 'dtatransFilter'))
         );
     }
 
