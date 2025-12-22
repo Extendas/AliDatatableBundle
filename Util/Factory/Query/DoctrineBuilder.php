@@ -9,6 +9,7 @@ use Ali\DatatableBundle\Util\Factory\Fields\EntityDatatableField;
 use Ali\DatatableBundle\Util\Factory\Filter\DatatableFilter;
 use Ali\DatatableBundle\Util\Factory\Filter\DateTimeFilter;
 use Ali\DatatableBundle\Util\Factory\Filter\MultiSelectFilter;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
@@ -803,7 +804,7 @@ class DoctrineBuilder implements QueryInterface
     public function setWhere($where, array $params = array())
     {
         $this->queryBuilder->where($where);
-        $this->queryBuilder->setParameters($params);
+        $this->queryBuilder->setParameters(new ArrayCollection($params));
         return $this;
     }
 
