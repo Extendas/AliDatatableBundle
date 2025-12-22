@@ -803,7 +803,10 @@ class DoctrineBuilder implements QueryInterface
     public function setWhere($where, array $params = array())
     {
         $this->queryBuilder->where($where);
-        $this->queryBuilder->setParameters($params);
+        foreach ($params as $param_key => $param_value)
+        {
+            $this->queryBuilder->setParameter($param_key, $param_value);
+        }
         return $this;
     }
 
