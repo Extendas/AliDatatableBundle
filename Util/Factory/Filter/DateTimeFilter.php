@@ -14,55 +14,44 @@ namespace Ali\DatatableBundle\Util\Factory\Filter;
  */
 class DateTimeFilter extends DatatableFilter
 {
-    protected $is_filter_time = false;
-    protected $is_required = false;
-    protected $default_start;
-    protected $default_end;
+    protected bool $is_filter_time = false;
+    protected bool $is_required = false;
+    protected \DateTime $default_start;
+    protected \DateTime $default_end;
 
-    /**
-     * DateTimeFilter constructor.
-     * @param bool $is_filter_time
-     * @param bool $is_required
-     * @param \DateTime $default_start
-     * @param \DateTime $default_end
-     */
-    public function __construct($is_filter_time=false, $is_required=false, \DateTime $default_start=null, \DateTime $default_end=null)
+    public function __construct(bool $is_filter_time = false, bool $is_required = false, ?\DateTime $default_start = null, ?\DateTime $default_end = null, bool $use_default_start_time = true, bool $use_default_end_time = true)
     {
         $this->is_filter_time   = $is_filter_time;
         $this->is_required      = $is_required;
         $this->default_start    = $default_start ?: new \DateTime;
         $this->default_end      = $default_end ?: new \DateTime;
+        if ($use_default_start_time)
+        {
+            $this->default_start->setTime(0, 0, 0);
+        }
+        if ($use_default_end_time)
+        {
+            $this->default_end->setTime(23, 59, 59);
+        }
         parent::__construct([]);
     }
 
-    /**
-     * @return bool
-     */
-    public function isFilterTime()
+    public function isFilterTime(): bool
     {
         return $this->is_filter_time;
     }
 
-    /**
-     * @return bool
-     */
-    public function isRequired()
+    public function isRequired(): bool
     {
         return $this->is_required;
     }
 
-    /**
-     * @return \DateTime
-     */
-    public function getDefaultStart()
+    public function getDefaultStart(): \DateTime
     {
         return $this->default_start;
     }
 
-    /**
-     * @return \DateTime
-     */
-    public function getDefaultEnd()
+    public function getDefaultEnd(): \DateTime
     {
         return $this->default_end;
     }
