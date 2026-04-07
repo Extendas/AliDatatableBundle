@@ -2,6 +2,13 @@
     {% if single_entity is defined and single_entity is not null and path_name is not defined %}
         {{ single_entity }}
     {% elseif single_entity is defined and single_entity is not null %}
-        <a data-id="{{ single_entity.id }}" data-title="{{ single_entity }}" data-url="{{ path(path_name, {'id': single_entity.id}) }}" href="{{ path(path_name, {'id': single_entity.id}) }}">{{ single_entity }}</a>
+        {% set url = '' %}
+        {% if single_entity is defined and path_name is defined and path_param_key is defined and path_value_field is defined %}
+            {% set path_value = attribute(single_entity, path_value_field) %}
+            {% set url = path(path_name, {(path_param_key): path_value}) %}
+        {% elseif single_entity is defined and path_name is defined %}
+            {% set url = path(path_name, {'id': single_entity.id}) %}
+        {% endif %}
+        <a data-id="{{ single_entity.id }}" data-title="{{ single_entity }}" data-url="{{ url }}" href="{{ url }}">{{ single_entity }}</a>
     {% endif %}
 {% endapply %}
