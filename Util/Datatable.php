@@ -97,6 +97,27 @@ class Datatable
     }
 
     /**
+     * Looks up a request parameter the same way the deprecated Request::get()
+     * did: attributes, then query, then request (POST) parameters.
+     */
+    private function _requestGet(Request $request, string $key, mixed $default = null): mixed
+    {
+        if ($request->attributes->has($key))
+        {
+            return $request->attributes->get($key);
+        }
+        if ($request->query->has($key))
+        {
+            return $request->query->get($key);
+        }
+        if ($request->request->has($key))
+        {
+            return $request->request->get($key);
+        }
+        return $default;
+    }
+
+    /**
      * add join
      *
      * @example:
@@ -188,7 +209,7 @@ class Datatable
             });
         }
         $output = array(
-            "sEcho"                => intval($request->get('sEcho')),
+            "sEcho"                => intval($this->_requestGet($request, 'sEcho')),
             "iTotalRecords"        => $total_count,
             "iTotalDisplayRecords" => $total_count,
             "aaData"               => $data
