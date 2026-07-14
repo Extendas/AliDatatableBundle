@@ -16,6 +16,7 @@ use Ali\DatatableBundle\Util\Factory\Query\DoctrineBuilder;
 use Ali\DatatableBundle\Util\Formatter\Renderer;
 use Ali\DatatableBundle\Util\Factory\Prototype\PrototypeBuilder;
 use Twig\Environment;
+use Twig\Markup;
 
 class Datatable
 {
@@ -174,7 +175,9 @@ class Datatable
         }
         if (!is_null($this->_renderer))
         {
+            $raw_data = $data;
             array_walk($data, $this->_renderer);
+            $this->_markRendererOutputAsSafe($data, $raw_data);
         }
         if (!is_null($this->_renderer_obj))
         {
@@ -194,6 +197,34 @@ class Datatable
             "aaData"               => $data
         );
         return new JsonResponse($output);
+    }
+
+    /**
+     * Column values untouched by the controller's ->setRenderer() closure are raw entity/DB
+     * data and must stay plain strings, so Twig (and any renderer view relying on Twig's
+     * escaping, e.g. _default.html.twig) auto-escapes them and prevents HTML/script injection.
+     * Values the closure *did* rewrite are trusted, deliberately-built HTML (links, badges, ...),
+     * so we wrap them in Twig\Markup - the same "already safe" marker the |raw filter produces -
+     * to stop that same auto-escaping from mangling them.
+     *
+     * @param array $data     data after the renderer closure ran (modified in place)
+     * @param array $raw_data data as it was before the renderer closure ran
+     *
+     * @return void
+     */
+    private function _markRendererOutputAsSafe(array &$data, array $raw_data)
+    {
+        foreach ($data as $row_index => &$row)
+        {
+            foreach ($row as $column_index => &$value)
+            {
+                $original = $raw_data[$row_index][$column_index] ?? null;
+                if (is_string($value) && $value !== $original)
+                {
+                    $value = new Markup($value, 'UTF-8');
+                }
+            }
+        }
     }
 
     /**
