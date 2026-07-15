@@ -1,6 +1,6 @@
 ali:
     common:
-        all: ''
+        all: '-- alles --'
         action: Aktionen
         confirm_delete: "Möchten Sie diesen Eintrag wirklich löschen?"
         delete: löschen
