@@ -181,7 +181,17 @@ class Datatable
         }
         if (!is_null($this->_renderer_obj))
         {
+            // ->setRenderers() always renders every column through Twig (falling back to
+            // _default.html.twig's {{ dt_item }}), so auto-escaping is guaranteed here.
             $this->_renderer_obj->applyTo($data, $objects);
+        }
+        else
+        {
+            // No Twig pass is guaranteed to run (no ->setRenderers()), so nothing will
+            // auto-escape leftover raw entity/DB values (or a whole untouched row when
+            // ->setRenderer() isn't used either). Escape them now instead of relying on
+            // a pass that may never happen.
+            $this->_escapeUnsafeValues($data);
         }
         if (!empty($this->_multiple))
         {
@@ -201,11 +211,11 @@ class Datatable
 
     /**
      * Column values untouched by the controller's ->setRenderer() closure are raw entity/DB
-     * data and must stay plain strings, so Twig (and any renderer view relying on Twig's
-     * escaping, e.g. _default.html.twig) auto-escapes them and prevents HTML/script injection.
+     * data. They are left as plain strings here and escaped later, either by Twig
+     * (if ->setRenderers() is also configured, see execute()) or by _escapeUnsafeValues().
      * Values the closure *did* rewrite are trusted, deliberately-built HTML (links, badges, ...),
      * so we wrap them in Twig\Markup - the same "already safe" marker the |raw filter produces -
-     * to stop that same auto-escaping from mangling them.
+     * so neither a later Twig pass nor _escapeUnsafeValues() mangles them.
      *
      * @param array $data     data after the renderer closure ran (modified in place)
      * @param array $raw_data data as it was before the renderer closure ran
@@ -222,6 +232,33 @@ class Datatable
                 if (is_string($value) && $value !== $original)
                 {
                     $value = new Markup($value, 'UTF-8');
+                }
+            }
+        }
+    }
+
+    /**
+     * Escapes any plain string cell value so raw entity/DB data can never be interpreted as
+     * HTML/script by the client-side DataTables grid, which inserts aaData directly into the
+     * DOM. Used whenever no ->setRenderers() Twig pass is configured to guarantee escaping -
+     * i.e. when the table has no renderer at all, or only a ->setRenderer() closure that may
+     * leave some columns (or all rows, for columns it doesn't touch) unrendered.
+     * Values already wrapped in Twig\Markup by _markRendererOutputAsSafe() are deliberately
+     * built HTML and are left untouched.
+     *
+     * @param array $data data after any ->setRenderer() closure ran (modified in place)
+     *
+     * @return void
+     */
+    private function _escapeUnsafeValues(array &$data)
+    {
+        foreach ($data as &$row)
+        {
+            foreach ($row as &$value)
+            {
+                if (is_string($value))
+                {
+                    $value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
                 }
             }
         }
