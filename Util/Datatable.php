@@ -196,7 +196,8 @@ class Datatable
         if (!empty($this->_multiple))
         {
             array_walk($data, function($val, $key) use(&$data, $ids) {
-                array_unshift($val, "<input type='checkbox' name='dataTables[actions][]' value='{$ids[$key]}' />");
+                $safe_id = htmlspecialchars((string) $ids[$key], ENT_QUOTES, 'UTF-8');
+                array_unshift($val, "<input type='checkbox' name='dataTables[actions][]' value='{$safe_id}' />");
                 $data[$key] = $val;
             });
         }
