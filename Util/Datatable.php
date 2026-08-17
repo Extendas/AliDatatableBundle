@@ -188,7 +188,7 @@ class Datatable
             });
         }
         $output = array(
-            "sEcho"                => intval($request->get('sEcho')),
+            "sEcho"                => intval($request->query->get('sEcho')),
             "iTotalRecords"        => $total_count,
             "iTotalDisplayRecords" => $total_count,
             "aaData"               => $data

@@ -96,11 +96,10 @@ class DoctrineBuilder implements QueryInterface
     {
         if ($this->search == TRUE)
         {
-            $request       = $this->request;
             $search_fields = array_values($this->fields);
             foreach ($search_fields as $i => $search_field)
             {
-                $search_param = $request->get("sSearch_{$i}");
+                $search_param = $this->request->query->get("sSearch_{$i}");
 
                 $filter = $filter_fields[$i] ?? null;
                 $is_required_date_filter = $filter instanceof DateTimeFilter && $filter->isRequired();
@@ -408,14 +407,14 @@ class DoctrineBuilder implements QueryInterface
      */
     public function addSorting()
     {
-        $request    = $this->request;
         $dql_fields = array_values($this->fields);
+        $sort_col   = $this->request->query->get('iSortCol_0');
 
         // add sorting
-        if ($request->get('iSortCol_0') !== null)
+        if ($sort_col !== null)
         {
 
-            $order_field = current(explode(' as ', $dql_fields[$request->get('iSortCol_0')]));
+            $order_field = current(explode(' as ', $dql_fields[$sort_col]));
         }
         else
         {
@@ -425,14 +424,14 @@ class DoctrineBuilder implements QueryInterface
 
         if ($order_field !== null)
         {
-            $field = $dql_fields[$request->get('iSortCol_0')];
+            $field = $dql_fields[$sort_col];
             if ($field instanceof DQLDatatableField)
             {
-                $qb->orderBy($field->getAlias(), $request->get('sSortDir_0', 'asc'));
+                $qb->orderBy($field->getAlias(), $this->request->query->get('sSortDir_0', 'asc'));
             }
             else
             {
-                $qb->orderBy($order_field, $request->get('sSortDir_0', 'asc'));
+                $qb->orderBy($order_field, $this->request->query->get('sSortDir_0', 'asc'));
             }
         }
         else
@@ -498,8 +497,6 @@ class DoctrineBuilder implements QueryInterface
      */
     public function getData(array $filter_fields=[])
     {
-        $request    = $this->request;
-
         $qb = $this->addSorting();
 
         // extract alias selectors
@@ -527,8 +524,8 @@ class DoctrineBuilder implements QueryInterface
         // add search
         $this->_addSearch($qb, $filter_fields);
 
-        $display_length = (int) $request->get('iDisplayLength');
-        $display_start = (int) $request->get('iDisplayStart');
+        $display_length = (int) $this->request->query->get('iDisplayLength');
+        $display_start = (int) $this->request->query->get('iDisplayStart');
         if($display_length > 10000) //Magic!
         {
             $display_length = 10000;
