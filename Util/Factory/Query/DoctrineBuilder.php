@@ -86,27 +86,6 @@ class DoctrineBuilder implements QueryInterface
     }
 
     /**
-     * Looks up a request parameter the same way the deprecated Request::get()
-     * did: attributes, then query, then request (POST) parameters.
-     */
-    private function _requestGet(string $key, mixed $default = null): mixed
-    {
-        if ($this->request->attributes->has($key))
-        {
-            return $this->request->attributes->get($key);
-        }
-        if ($this->request->query->has($key))
-        {
-            return $this->request->query->get($key);
-        }
-        if ($this->request->request->has($key))
-        {
-            return $this->request->request->get($key);
-        }
-        return $default;
-    }
-
-    /**
      * get the search dql
      *
      * @param \Doctrine\ORM\QueryBuilder $queryBuilder
@@ -120,7 +99,7 @@ class DoctrineBuilder implements QueryInterface
             $search_fields = array_values($this->fields);
             foreach ($search_fields as $i => $search_field)
             {
-                $search_param = $this->_requestGet("sSearch_{$i}");
+                $search_param = $this->request->query->get("sSearch_{$i}");
 
                 $filter = $filter_fields[$i] ?? null;
                 $is_required_date_filter = $filter instanceof DateTimeFilter && $filter->isRequired();
@@ -429,7 +408,7 @@ class DoctrineBuilder implements QueryInterface
     public function addSorting()
     {
         $dql_fields = array_values($this->fields);
-        $sort_col   = $this->_requestGet('iSortCol_0');
+        $sort_col   = $this->request->query->get('iSortCol_0');
 
         // add sorting
         if ($sort_col !== null)
@@ -448,11 +427,11 @@ class DoctrineBuilder implements QueryInterface
             $field = $dql_fields[$sort_col];
             if ($field instanceof DQLDatatableField)
             {
-                $qb->orderBy($field->getAlias(), $this->_requestGet('sSortDir_0', 'asc'));
+                $qb->orderBy($field->getAlias(), $this->request->query->get('sSortDir_0', 'asc'));
             }
             else
             {
-                $qb->orderBy($order_field, $this->_requestGet('sSortDir_0', 'asc'));
+                $qb->orderBy($order_field, $this->request->query->get('sSortDir_0', 'asc'));
             }
         }
         else
@@ -545,8 +524,8 @@ class DoctrineBuilder implements QueryInterface
         // add search
         $this->_addSearch($qb, $filter_fields);
 
-        $display_length = (int) $this->_requestGet('iDisplayLength');
-        $display_start = (int) $this->_requestGet('iDisplayStart');
+        $display_length = (int) $this->request->query->get('iDisplayLength');
+        $display_start = (int) $this->request->query->get('iDisplayStart');
         if($display_length > 10000) //Magic!
         {
             $display_length = 10000;
