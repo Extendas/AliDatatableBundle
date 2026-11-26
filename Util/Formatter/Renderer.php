@@ -34,9 +34,7 @@ class Renderer
      */
     public function applyView($view_path, array $params)
     {
-        $out = $this->twig
-                ->render($view_path, $params);
-        return html_entity_decode($out);
+        return $this->twig->render($view_path, $params);
     }
 
     /**
